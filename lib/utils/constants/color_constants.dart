@@ -50,19 +50,4 @@ class DarkColorConstants {
   static const Color selection = Color(0xFF536724);
   static const Color blue = Color(0xff2270B5);
   static const Color yellow = Color(0xffB8862D);
-
-  static const Color codeRoot = Color(0xFFEAEAEA); // Base text
-  static const Color codeComment = Color(0xFF9E9E9E); // Comments
-  static const Color codeKeyword = Color(0xFFFF7B72); // e.g. `if`, `return`
-  static const Color codeNumber = Color(0xFF79C0FF); // Numbers
-  static const Color codeString = Color(0xFFA5D6FF); // Strings
-  static const Color codeTitle = Color(0xFFD2A8FF); // e.g. class names
-  static const Color codeType = Color(0xFFFFA657); // Types
-  static const Color codeTag = Color(0xFF7EE787); // HTML/XML tags
-  static const Color codeRegexp = Color(0xFFFAE57C); // Regex / link
-  static const Color codeSymbol = Color(0xFFE468FD); // Symbols
-  static const Color codeBuiltIn = Color(0xFF59D9DB); // Built-in
-  static const Color codeMeta = Color(0xFF00FA9A); // Meta info
-  static const Color codeDeletionBg = Color(0xFFFFDDDD);
-  static const Color codeAdditionBg = Color(0xFFDDFFDD);
 }
