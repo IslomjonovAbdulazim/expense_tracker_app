@@ -13,23 +13,28 @@ extension ColorExtension on BuildContext {
 
   // — ColorScheme Colors —
 
-  /// Primary color. (For example, “red”)
+  /// Primary color.
   Color get primary => Theme.of(this).colorScheme.primary;
 
-  /// Color shown on top of the primary color. (For example, “white”)
+  /// Secondary color (positive/income)
+  Color get secondary => Theme.of(this).colorScheme.secondary;
+
+  /// Tertiary color (negative/expense)
+  Color get tertiary => Theme.of(this).colorScheme.tertiary;
+
+  /// Color shown on top of the primary color.
   Color get white => Theme.of(this).colorScheme.onPrimary;
 
-  /// Surface color. If your design uses a lighter variant of your primary, you could call it “lightRed.”
-  /// (Otherwise, you might simply use [surface].)
-  Color get lightRed => Theme.of(this).colorScheme.surface;
+  /// Surface color.
+  Color get surface => Theme.of(this).colorScheme.surface;
 
   /// Color used for text/icons on the surface.
   Color get onSurface => Theme.of(this).colorScheme.onSurface;
 
-  /// Error color. (Typically red as well; if it’s the same as [primary], you can omit it.)
+  /// Error color.
   Color get error => Theme.of(this).colorScheme.error;
 
-  // — Text Colors (if needed) —
+  // — Text Colors —
 
   /// Primary text color.
   Color get textPrimary => Theme.of(this).textTheme.bodyLarge!.color!;
@@ -37,9 +42,19 @@ extension ColorExtension on BuildContext {
   /// Secondary text color.
   Color get textSecondary => Theme.of(this).textTheme.bodyMedium!.color!;
 
-  /// Custom
+  /// Custom theme extension colors
   Color get selection => Theme.of(this).extension<CustomTheme>()!.selectionColor;
   Color get blueColor => Theme.of(this).extension<CustomTheme>()!.blueColor;
   Color get yellowColor => Theme.of(this).extension<CustomTheme>()!.yellowColor;
   Color get greenColor => Theme.of(this).extension<CustomTheme>()!.greenColor;
+
+  // Category colors
+  Color get foodColor => Theme.of(this).extension<CustomTheme>()!.foodColor;
+  Color get transportColor => Theme.of(this).extension<CustomTheme>()!.transportColor;
+  Color get housingColor => Theme.of(this).extension<CustomTheme>()!.housingColor;
+  Color get utilitiesColor => Theme.of(this).extension<CustomTheme>()!.utilitiesColor;
+  Color get healthcareColor => Theme.of(this).extension<CustomTheme>()!.healthcareColor;
+  Color get entertainmentColor => Theme.of(this).extension<CustomTheme>()!.entertainmentColor;
+  Color get shoppingColor => Theme.of(this).extension<CustomTheme>()!.shoppingColor;
+  Color get educationColor => Theme.of(this).extension<CustomTheme>()!.educationColor;
 }
