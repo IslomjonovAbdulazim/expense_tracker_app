@@ -6,8 +6,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_easy_dialogs/flutter_easy_dialogs.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
-import 'package:iut_football_app/routes/app_routes.dart';
-import 'package:iut_football_app/setup/bindings/initial_binding.dart';
+import 'package:expense_tracker_app/routes/app_routes.dart';
+import 'package:expense_tracker_app/setup/bindings/initial_binding.dart';
 
 import 'utils/services/theme_service.dart';
 import 'utils/services/token_service.dart' show TokenService;

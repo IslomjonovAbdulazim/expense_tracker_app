@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:iut_football_app/utils/extenstions/theme_data.dart';
+import 'package:expense_tracker_app/utils/extenstions/theme_data.dart';
 
 extension ColorExtension on BuildContext {
   /// Background used for Scaffold and AppBar.

@@ -1,9 +1,10 @@
+import 'package:expense_tracker_app/utils/extenstions/color_extension.dart';
+import 'package:expense_tracker_app/utils/extenstions/text_style_extention.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:iut_football_app/utils/extenstions/color_extension.dart';
-import 'package:iut_football_app/utils/extenstions/text_style_extention.dart';
-import 'package:iut_football_app/routes/app_routes.dart';
+
+import '../../../routes/app_routes.dart';
 
 part '_binding.dart';
 part '_controller.dart';

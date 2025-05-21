@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:iut_football_app/utils/extenstions/color_extension.dart';
+import 'package:expense_tracker_app/utils/extenstions/color_extension.dart';
 
 import '../constants/font_constants.dart';
 
