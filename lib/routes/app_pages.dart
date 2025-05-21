@@ -1,6 +1,7 @@
 // app_pages.dart
 import 'package:get/get.dart';
 import '../features/home/imports.dart';
+import '../features/screens/language/imports.dart';
 import '../features/screens/offline/imports.dart';
 import '../features/screens/pin_code/imports.dart';
 import 'app_routes.dart';
@@ -31,6 +32,11 @@ class AppPages {
       bindings: [
         OfflineBinding(),
       ],
+    ),
+    GetPage(
+      name: AppRoutes.language,
+      page: () => const LanguagePage(),
+      binding: LanguageBinding(),
     ),
   ];
 }

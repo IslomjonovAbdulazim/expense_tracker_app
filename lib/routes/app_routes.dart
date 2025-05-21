@@ -17,4 +17,5 @@ class AppRoutes {
   static const String offline = '/offline';
   static const String auth = '/auth';
   static const String internalError = '/internal-error';
+  static const String language = '/language';
 }

@@ -17,7 +17,6 @@ Future<void> main() async {
 
   await setupServiceLocator();
 
-  // Run the app
   runApp(const MyApp());
 }
 
@@ -28,7 +27,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     final TranslationService translationService = Get.put(TranslationService());
     return GetMaterialApp.router(
-      title: 'ExpenseTracker',
+      title: 'Expense',
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       themeMode: ThemeMode.system,
