@@ -1,74 +1,52 @@
-// lib/data/services/network_service.dart
-import 'dart:io';
+// lib/utils/services/network_service.dart
 
 import 'package:dartz/dartz.dart';
 import 'package:dio/dio.dart';
-import 'package:expense_tracker_app/utils/services/token_service.dart';
-import 'package:flutter/foundation.dart';
-import 'package:pretty_dio_logger/pretty_dio_logger.dart';
 
 import '../../core/error/network_failure.dart';
-import '../constants/api_constants.dart';
+import '../constants/app_constants.dart';
 import '../helpers/logger.dart';
 
 class NetworkService {
-  static NetworkService get instance => _instance;
+  // Create a singleton instance
   static final NetworkService _instance = NetworkService._internal();
+
+  // Factory constructor to return the singleton instance
+  factory NetworkService() => _instance;
+
+  // Private constructor for singleton pattern
+  NetworkService._internal();
+
+  // Alternatively, if you don't need a singleton:
+  // NetworkService(); // Regular constructor
 
   late final Dio _dio;
 
-  // Private constructor
-  NetworkService._internal() {
+  /// Initialize Dio with base options and interceptors.
+  void initialize() {
     _dio = Dio(
       BaseOptions(
-        baseUrl: ApiConstants.baseURL,
-        contentType: 'application/json',
-        connectTimeout: const Duration(seconds: 30),
-        receiveTimeout: const Duration(seconds: 30),
+        baseUrl: AppConstants.baseUrl,
+        connectTimeout: Duration(seconds: TimeoutConstants.networkTimeoutSeconds),
+        receiveTimeout: Duration(seconds: TimeoutConstants.networkTimeoutSeconds),
       ),
     );
-
-    // Add interceptors
-    _setupInterceptors();
-  }
-
-  void _setupInterceptors() {
-    // Only add logger in debug mode
-    if (kDebugMode) {
-      _dio.interceptors.add(PrettyDioLogger(
-        requestBody: true,
-        responseBody: true,
-        requestHeader: true,
-      ));
-    }
 
     _dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) {
-          // Add auth token if available
-          final tokenService = TokenService.to;
-          if (tokenService.hasToken) {
-            options.headers['Authorization'] = tokenService.token;
-          }
-
-          options.headers['accept'] = '*/*';
           Logger.log("REQUEST[${options.method}] => PATH: ${options.path}");
-          return handler.next(options);
+          return handler.next(options); // Continue to the request.
         },
         onResponse: (response, handler) {
-          Logger.log("RESPONSE[${response.statusCode}] => DATA: ${response.data}");
-          return handler.next(response);
+          Logger.log(
+              "RESPONSE[${response.statusCode}] => DATA: ${response.data}");
+          return handler.next(response); // Continue to the response.
         },
         onError: (DioException e, handler) {
-          Logger.error("ERROR[${e.response?.statusCode}] => MESSAGE: ${e.message}");
-
-          // Handle auth errors
-          if (e.response?.statusCode == 401) {
-            // Handle token expiration or auth issues
-            debugPrint('Authorization error: ${e.message}');
-          }
-
-          return handler.next(e);
+          Logger.error(
+              "ERROR[${e.response?.statusCode}] => MESSAGE: ${e.message}");
+          return handler.next(e); // Continue with error handling.
         },
       ),
     );
@@ -78,21 +56,16 @@ class NetworkService {
   Future<Either<NetworkFailure, T>> get<T>(
       String endpoint, {
         Map<String, dynamic>? queryParameters,
-        Options? options,
       }) async {
     try {
-      final response = await _dio.get(
-        endpoint,
-        queryParameters: queryParameters,
-        options: options,
-      );
+      final response =
+      await _dio.get(endpoint, queryParameters: queryParameters);
       return Right(response.data as T);
     } on DioException catch (e) {
-      return Left(_handleError(e));
-    } catch (e) {
+      Logger.error("Dio GET error: ${e.message}");
       return Left(NetworkFailure(
-        message: e.toString(),
-        statusCode: 0,
+        message: e.message ?? "Error",
+        statusCode: e.response?.statusCode,
       ));
     }
   }
@@ -102,22 +75,16 @@ class NetworkService {
       String endpoint, {
         dynamic data,
         Map<String, dynamic>? queryParameters,
-        Options? options,
       }) async {
     try {
-      final response = await _dio.post(
-        endpoint,
-        data: data,
-        queryParameters: queryParameters,
-        options: options,
-      );
+      final response = await _dio.post(endpoint,
+          data: data, queryParameters: queryParameters);
       return Right(response.data as T);
     } on DioException catch (e) {
-      return Left(_handleError(e));
-    } catch (e) {
+      Logger.error("Dio POST error: ${e.message}");
       return Left(NetworkFailure(
-        message: e.toString(),
-        statusCode: 0,
+        message: e.message ?? "Error",
+        statusCode: e.response?.statusCode,
       ));
     }
   }
@@ -127,22 +94,16 @@ class NetworkService {
       String endpoint, {
         dynamic data,
         Map<String, dynamic>? queryParameters,
-        Options? options,
       }) async {
     try {
-      final response = await _dio.put(
-        endpoint,
-        data: data,
-        queryParameters: queryParameters,
-        options: options,
-      );
+      final response = await _dio.put(endpoint,
+          data: data, queryParameters: queryParameters);
       return Right(response.data as T);
     } on DioException catch (e) {
-      return Left(_handleError(e));
-    } catch (e) {
+      Logger.error("Dio PUT error: ${e.message}");
       return Left(NetworkFailure(
-        message: e.toString(),
-        statusCode: 0,
+        message: e.message ?? "Error",
+        statusCode: e.response?.statusCode,
       ));
     }
   }
@@ -152,42 +113,17 @@ class NetworkService {
       String endpoint, {
         dynamic data,
         Map<String, dynamic>? queryParameters,
-        Options? options,
       }) async {
     try {
-      final response = await _dio.delete(
-        endpoint,
-        data: data,
-        queryParameters: queryParameters,
-        options: options,
-      );
+      final response = await _dio.delete(endpoint,
+          data: data, queryParameters: queryParameters);
       return Right(response.data as T);
     } on DioException catch (e) {
-      return Left(_handleError(e));
-    } catch (e) {
+      Logger.error("Dio DELETE error: ${e.message}");
       return Left(NetworkFailure(
-        message: e.toString(),
-        statusCode: 0,
+        message: e.message ?? "Error",
+        statusCode: e.response?.statusCode,
       ));
     }
-  }
-
-  /// Helper method to handle DioExceptions
-  NetworkFailure _handleError(DioException e) {
-    Logger.error("Dio error: ${e.message}");
-    return NetworkFailure(
-      message: e.message ?? "Network error",
-      statusCode: e.response?.statusCode,
-    );
-  }
-}
-
-// HTTP override for self-signed certificates
-class MyHttpOverrides extends HttpOverrides {
-  @override
-  HttpClient createHttpClient(SecurityContext? context) {
-    return super.createHttpClient(context)
-      ..badCertificateCallback =
-          (X509Certificate cert, String host, int port) => true;
   }
 }

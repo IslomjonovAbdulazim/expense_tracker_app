@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 
+import '../constants/app_constants.dart';
+
 enum AppThemeEnum {
   light,
   dark,
@@ -12,14 +14,12 @@ class ThemeController extends GetxController {
   static ThemeController get to => Get.find<ThemeController>();
 
   final _storage = GetStorage();
-  final _key = 'selectedTheme';
-
-  Rx<AppThemeEnum> selectedTheme = AppThemeEnum.system.obs;
+  final Rx<AppThemeEnum> selectedTheme = AppThemeEnum.system.obs;
 
   @override
   void onInit() {
     super.onInit();
-    final storedTheme = _storage.read(_key);
+    final storedTheme = _storage.read(StorageKeys.selectedTheme);
     if (storedTheme != null) {
       selectedTheme.value = AppThemeEnum.values[storedTheme];
     }
@@ -39,7 +39,7 @@ class ThemeController extends GetxController {
 
   void updateTheme(AppThemeEnum theme) {
     selectedTheme.value = theme;
-    _storage.write(_key, theme.index);
+    _storage.write(StorageKeys.selectedTheme, theme.index);
     Get.changeThemeMode(themeMode);
   }
 }

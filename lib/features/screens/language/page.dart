@@ -1,7 +1,7 @@
 part of 'imports.dart';
 
 class LanguagePage extends GetView<_Controller> {
-  const LanguagePage({Key? key}) : super(key: key);
+  const LanguagePage({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -10,15 +10,9 @@ class LanguagePage extends GetView<_Controller> {
         title: Text(AppTranslationKeys.language.tr),
         elevation: 0,
       ),
-      body: Obx(() => ListView.separated(
+      body: ListView.builder(
         padding: const EdgeInsets.symmetric(vertical: 16),
         itemCount: controller.languages.length,
-        separatorBuilder: (context, index) => Divider(
-          color: context.dividerColor,
-          height: 1,
-          indent: 16,
-          endIndent: 16,
-        ),
         itemBuilder: (context, index) {
           final language = controller.languages[index];
           final locale = language['locale'] as Locale;
@@ -31,7 +25,7 @@ class LanguagePage extends GetView<_Controller> {
             onTap: () => controller.changeLanguage(locale),
           );
         },
-      )),
+      ),
     );
   }
 }

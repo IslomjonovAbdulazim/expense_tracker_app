@@ -17,6 +17,8 @@ dependencies:
   get: ^4.6.6               # State management and navigation
   get_storage: ^2.1.1       # Local storage solution
   shared_preferences: ^2.5.1 # Required for PIN service
+  flutter_secure_storage: ^9.2.4
+  crypto: ^3.0.6
 
   # Networking
   dio: ^5.8.0+1             # HTTP client

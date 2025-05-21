@@ -20,12 +20,12 @@ class InitialBinding extends Bindings {
       await Get.putAsync<PinService>(() async => await PinService().init());
     }
 
-    Get.put(LanguageController());
+
     // Initialize connectivity service
     Get.put(ConnectivityService());
 
     // Initialize network service (singleton)
     // It's already initialized through its constructor, but we ensure it here
-    NetworkService.instance;
+    NetworkService().initialize();
   }
 }
