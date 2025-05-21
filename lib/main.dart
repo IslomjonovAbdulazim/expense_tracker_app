@@ -3,7 +3,6 @@ import 'package:expense_tracker_app/routes/app_pages.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_easy_dialogs/flutter_easy_dialogs.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 
@@ -52,18 +51,22 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Get themeController from ServiceLocator
+    final themeController = Get.find<ThemeController>();
+
     return Obx(() {
       return GetMaterialApp(
         title: 'ExpenseTracker',
         theme: AppTheme.lightTheme,
         darkTheme: AppTheme.darkTheme,
-        themeMode: ThemeController.to.themeMode,
+        themeMode: themeController.themeMode,
         debugShowCheckedModeBanner: false,
+        navigatorKey: Get.key, // Add this to fix GlobalKey duplication issue
         initialRoute: _determineInitialRoute(),
         getPages: AppPages.routes,
         defaultTransition: Transition.cupertino,
         builder: _appBuilder,
-        home: const Scaffold(body: Center(child: CircularProgressIndicator())),
+        // Remove the home parameter as it conflicts with initialRoute
       );
     });
   }
@@ -82,14 +85,26 @@ class MyApp extends StatelessWidget {
   }
 
   String _determineInitialRoute() {
-    // Check if PIN is set
-    final storage = GetStorage();
-    final isPinProtected = storage.read('app_pin_code') != null;
+    try {
+      // Check if PIN is set
+      final storage = GetStorage();
+      final isPinProtected = storage.read('app_pin_code') != null;
 
-    if (isPinProtected) {
-      return AppRoutes.pinCode;
-    } else {
-      return TokenService.to.hasToken ? AppRoutes.admin : AppRoutes.home;
+      // Check if TokenService is available
+      if (Get.isRegistered<TokenService>()) {
+        if (isPinProtected) {
+          return AppRoutes.pinCode;
+        } else {
+          return TokenService.to.hasToken ? AppRoutes.admin : AppRoutes.home;
+        }
+      } else {
+        // Fallback if TokenService isn't registered yet
+        return AppRoutes.home;
+      }
+    } catch (e) {
+      print('Error determining initial route: $e');
+      // Return a safe default route if there's an error
+      return AppRoutes.home;
     }
   }
 }

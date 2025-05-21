@@ -1,44 +1,29 @@
+// lib/data/providers/dio_manager.dart
 import 'dart:io';
-import 'package:dio/dio.dart';
+
+// Import Dio with a specific prefix to avoid naming conflicts
+import 'package:dio/dio.dart' as dio;
 import 'package:flutter/foundation.dart';
 import 'package:pretty_dio_logger/pretty_dio_logger.dart';
-import '../../../utils/constants/api_constants.dart';
-import '../../utils/services/token_service.dart';
+import 'package:get/get.dart';
 
-class DioManager {
-  static final DioManager _instance = DioManager._internal();
-  late final Dio dio;
+import '../../utils/constants/api_constants.dart';
 
-  factory DioManager() => _instance;
+// Create a Dio singleton instance
+final dio.Dio dioInstance = dio.Dio(
+  dio.BaseOptions(
+    baseUrl: ApiConstants.baseURL,
+    contentType: 'application/json',
+  ),
+);
 
-  DioManager._internal() {
-    dio = Dio(
-      BaseOptions(
-        baseUrl: ApiConstants.baseURL,
-        contentType: 'application/json',
-      ),
-    );
-    _configureInterceptors();
-  }
-
-  void _configureInterceptors() {
-    // Add auth token interceptor
-    dio.interceptors.add(
-      InterceptorsWrapper(
-        onRequest: (options, handler) {
-          final token = TokenService.to.token;
-          if (token.isNotEmpty) {
-            options.headers['Authorization'] = token;
-          }
-          options.headers['accept'] = '*/*';
-          return handler.next(options);
-        },
-      ),
-    );
-
+// Configure Dio with interceptors and settings
+void configureDio() {
+  try {
     // Add logging in debug mode
     if (kDebugMode) {
-      dio.interceptors.add(
+      dioInstance.interceptors.add(DioInterceptor());
+      dioInstance.interceptors.add(
         PrettyDioLogger(
           requestBody: true,
           responseBody: true,
@@ -47,33 +32,58 @@ class DioManager {
       );
     }
 
-    // Add error handling interceptor
-    dio.interceptors.add(
-      InterceptorsWrapper(
-        onError: (DioException err, handler) {
-          debugPrint('API Error: ${err.message}');
-          // Handle specific status codes
-          if (err.response?.statusCode == 401) {
-            // Handle unauthorized - could refresh token or logout
-          }
-          return handler.next(err);
-        },
-      ),
-    );
-  }
-
-  // Configure certificate verification bypass for dev environments
-  static void configureHttpOverrides() {
-    if (!kReleaseMode) {
-      HttpOverrides.global = MyHttpOverrides();
+    // Register the Dio instance with GetX for dependency injection
+    if (!Get.isRegistered<dio.Dio>()) {
+      Get.put(dioInstance, permanent: true);
     }
+
+    debugPrint("Dio configured successfully");
+  } catch (e) {
+    debugPrint("Error configuring Dio: $e");
   }
 }
 
+// Custom interceptor for Dio
+class DioInterceptor extends dio.Interceptor {
+  @override
+  void onRequest(dio.RequestOptions options, dio.RequestInterceptorHandler handler) {
+    // Add any request headers here
+    options.headers['accept'] = '*/*';
+
+    // Add authorization token if available
+    // if (TokenService.to.hasToken) {
+    //   options.headers['Authorization'] = 'Bearer ${TokenService.to.token}';
+    // }
+
+    super.onRequest(options, handler);
+  }
+
+  @override
+  void onResponse(dio.Response response, dio.ResponseInterceptorHandler handler) {
+    debugPrint('Response received: ${response.statusCode}');
+    super.onResponse(response, handler);
+  }
+
+  @override
+  void onError(dio.DioException err, dio.ErrorInterceptorHandler handler) {
+    debugPrint('Dio error: ${err.type} - ${err.response?.statusCode}');
+
+    // Handle authentication errors
+    if (err.response?.statusCode == 401 || err.response?.statusCode == 403) {
+      debugPrint('Authentication error occurred');
+      // Handle authentication error (logout, refresh token, etc.)
+    }
+
+    super.onError(err, handler);
+  }
+}
+
+// HTTP override for accepting self-signed certificates (for development)
 class MyHttpOverrides extends HttpOverrides {
   @override
   HttpClient createHttpClient(SecurityContext? context) {
     return super.createHttpClient(context)
-      ..badCertificateCallback = (_, __, ___) => !kReleaseMode;
+      ..badCertificateCallback =
+          (X509Certificate cert, String host, int port) => true;
   }
 }

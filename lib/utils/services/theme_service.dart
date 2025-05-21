@@ -14,26 +14,15 @@ class ThemeController extends GetxController {
   final _storage = GetStorage();
   final _key = 'selectedTheme';
 
-  final Rx<AppThemeEnum> selectedTheme = AppThemeEnum.system.obs;
+  Rx<AppThemeEnum> selectedTheme = AppThemeEnum.system.obs;
 
   @override
   void onInit() {
     super.onInit();
-    _loadSavedTheme();
-    _applyTheme();
-
-    // Listen for changes to apply theme
-    ever(selectedTheme, (_) => _applyTheme());
-  }
-
-  void _loadSavedTheme() {
-    final storedTheme = _storage.read<int>(_key);
+    final storedTheme = _storage.read(_key);
     if (storedTheme != null) {
       selectedTheme.value = AppThemeEnum.values[storedTheme];
     }
-  }
-
-  void _applyTheme() {
     Get.changeThemeMode(themeMode);
   }
 
@@ -51,12 +40,6 @@ class ThemeController extends GetxController {
   void updateTheme(AppThemeEnum theme) {
     selectedTheme.value = theme;
     _storage.write(_key, theme.index);
-  }
-
-  bool get isDarkMode {
-    if (selectedTheme.value == AppThemeEnum.system) {
-      return WidgetsBinding.instance.platformDispatcher.platformBrightness == Brightness.dark;
-    }
-    return selectedTheme.value == AppThemeEnum.dark;
+    Get.changeThemeMode(themeMode);
   }
 }
