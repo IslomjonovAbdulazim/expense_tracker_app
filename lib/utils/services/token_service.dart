@@ -2,55 +2,43 @@ import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 
 class TokenService extends GetxService {
-  static TokenService get to => Get.find();
+  static TokenService get to => Get.find<TokenService>();
 
   final _storage = GetStorage();
-  final _token = RxString('');
+  final _tokenKey = 'auth_token';
+  final _refreshTokenKey = 'refresh_token';
 
-  /// Called immediately after the service is registered.
+  final RxString _token = ''.obs;
+  final RxString _refreshToken = ''.obs;
+
   Future<TokenService> init() async {
-    _token.value = _storage.read('token') ?? '';
-    print("-------------------------------token");
-    print(_token.value);
+    _token.value = _storage.read(_tokenKey) ?? '';
+    _refreshToken.value = _storage.read(_refreshTokenKey) ?? '';
     return this;
   }
 
   Future<void> saveToken(String token) async {
     _token.value = token;
-    print("------------------------------token");
-    print(_token.value);
-    await _storage.write('token', token);
-    print(_storage.read("token"));
+    await _storage.write(_tokenKey, token);
   }
 
   Future<void> saveRefreshToken(String refreshToken) async {
-    _token.value = refreshToken;
-    await _storage.write('refresh-token', refreshToken);
+    _refreshToken.value = refreshToken;
+    await _storage.write(_refreshTokenKey, refreshToken);
   }
 
-  Future<void> clearToken() async {
+  Future<void> clearTokens() async {
     _token.value = '';
-    await _storage.remove('token');
+    _refreshToken.value = '';
+    await _storage.remove(_tokenKey);
+    await _storage.remove(_refreshTokenKey);
   }
 
-  /// Check if token is available and non-empty.
   bool get hasToken => _token.value.isNotEmpty;
 
-  /// (Optional) Expose the token publicly if needed
-  String get token {
-    if (_token.value.isNotEmpty) {
-      return "Bearer ${_token.value}";
-    } else {
-      return "";
-    }
-  }
+  String get token => _token.value.isNotEmpty ? 'Bearer ${_token.value}' : '';
 
-  /// (Optional) Expose the token publicly if needed
-  String get withoutBearer {
-    if (_token.value.isNotEmpty) {
-      return _token.value;
-    } else {
-      return "";
-    }
-  }
+  String get tokenWithoutBearer => _token.value;
+
+  String get refreshToken => _refreshToken.value;
 }

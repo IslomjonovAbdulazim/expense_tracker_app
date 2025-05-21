@@ -1,24 +1,20 @@
-import 'package:get/get.dart';
-
-import '../features/screens/pin_code/imports.dart';
-
-part 'app_pages.dart';
-
+// app_routes.dart
 class AppRoutes {
-  static const String admin = "/admin";
-  static const String clubDetail = "/club-detail";
-  static const String home = "/home";
-  static const String league = "/league";
-  static const String matchDetail = "/match-detail";
-  static const String matches = "/matches";
-  static const String playerDetails = "/player-details";
-  static const String stats = "/stats";
+  // Core feature routes
+  static const String splash = '/splash';
+  static const String home = '/home';
+  static const String admin = '/admin';
 
-  /// #Screen
-  static const String offline = "/offline";
-  static const String auth = "/auth";
-  static const String upgrade = "/upgrade";
-  static const String internalError = "/internal-error";
-  static const String splash = "/splash";
-  static const String pinCode = "/pin-code";
+  // Feature routes
+  static const String transactions = '/transactions';
+  static const String addTransaction = '/add-transaction';
+  static const String categories = '/categories';
+  static const String reports = '/reports';
+  static const String settings = '/settings';
+  static const String pinCode = '/pin-code';
+
+  // Utility routes
+  static const String offline = '/offline';
+  static const String auth = '/auth';
+  static const String internalError = '/internal-error';
 }

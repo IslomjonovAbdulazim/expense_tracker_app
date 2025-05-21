@@ -1,40 +1,49 @@
 import 'package:device_preview/device_preview.dart';
-import 'package:faker/faker.dart';
+import 'package:expense_tracker_app/routes/app_pages.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_easy_dialogs/flutter_easy_dialogs.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
-import 'package:expense_tracker_app/routes/app_routes.dart';
-import 'package:expense_tracker_app/setup/initial_binding.dart';
 
+import 'core/di/service_locator.dart';
+import 'routes/app_routes.dart';
+import 'utils/services/token_service.dart';
 import 'utils/services/theme_service.dart';
-import 'utils/services/token_service.dart' show TokenService;
 import 'utils/themes/app_theme.dart';
 
-final faker = Faker();
+Future<void> main() async {
+  // Initialize Flutter bindings and configurations
+  await _initializeApp();
 
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  await SystemChrome.setPreferredOrientations([
-    DeviceOrientation.portraitUp,
-  ]);
-  await GetStorage.init();
-  await Get.putAsync<TokenService>(() async => await TokenService().init());
-  Get.put(ThemeController());
-  SystemChrome.setEnabledSystemUIMode(
-    SystemUiMode.manual,
-    overlays: SystemUiOverlay.values,
-  );
+  // Run the app with DevicePreview for responsive testing
   runApp(
     DevicePreview(
       enabled: kIsWeb,
-      data: DevicePreviewData(
-        isDarkMode: true,
-      ),
-      builder: (context) => MyApp(),
+      data: const DevicePreviewData(isDarkMode: true),
+      builder: (context) => const MyApp(),
     ),
+  );
+}
+
+Future<void> _initializeApp() async {
+  // Ensure Flutter is initialized
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Set preferred orientations
+  await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+
+  // Initialize local storage
+  await GetStorage.init();
+
+  // Setup dependency injection
+  await setupServiceLocator();
+
+  // Configure system UI appearance
+  SystemChrome.setEnabledSystemUIMode(
+    SystemUiMode.manual,
+    overlays: SystemUiOverlay.values,
   );
 }
 
@@ -43,29 +52,32 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ThemeController themeController = Get.find<ThemeController>();
     return Obx(() {
       return GetMaterialApp(
         title: 'ExpenseTracker',
         theme: AppTheme.lightTheme,
         darkTheme: AppTheme.darkTheme,
-        themeMode: themeController.themeMode,
+        themeMode: ThemeController.to.themeMode,
         debugShowCheckedModeBanner: false,
         initialRoute: _determineInitialRoute(),
-        initialBinding: InitialBinding(),
-        getPages: AppPages.pages,
-        builder: (context, child) => MediaQuery(
-          data: MediaQuery.of(context).copyWith(
-            textScaler: TextScaler.noScaling,
-            boldText: false,
-          ),
-          child: ScrollConfiguration(
-            behavior: const ScrollBehavior(),
-            child: child ?? const Scaffold(),
-          ),
-        ),
+        getPages: AppPages.routes,
+        defaultTransition: Transition.cupertino,
+        builder: _appBuilder,
       );
     });
+  }
+
+  Widget _appBuilder(BuildContext context, Widget? child) {
+    return MediaQuery(
+      data: MediaQuery.of(context).copyWith(
+        textScaler: TextScaler.noScaling,
+        boldText: false,
+      ),
+      child: ScrollConfiguration(
+        behavior: const ScrollBehavior(),
+        child: child ?? const SizedBox.shrink(),
+      ),
+    );
   }
 
   String _determineInitialRoute() {
@@ -80,5 +92,3 @@ class MyApp extends StatelessWidget {
     }
   }
 }
-
-

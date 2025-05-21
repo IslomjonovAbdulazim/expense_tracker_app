@@ -1,52 +1,72 @@
 import 'dart:io';
-
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:pretty_dio_logger/pretty_dio_logger.dart';
-
 import '../../../utils/constants/api_constants.dart';
+import '../../utils/services/token_service.dart';
 
-final Dio dioInstance = Dio(
-  BaseOptions(
-    baseUrl: ApiConstants.baseURL,
-    contentType: 'application/json',
-  ),
-);
+class DioManager {
+  static final DioManager _instance = DioManager._internal();
+  late final Dio dio;
 
-void configureDio() {
-  if (kDebugMode) {
-    dioInstance.interceptors.add(DioInterceptor());
-    dioInstance.interceptors
-        .add(PrettyDioLogger(requestBody: true, responseBody: true));
-  }
-}
+  factory DioManager() => _instance;
 
-class DioInterceptor extends Interceptor {
-  @override
-  void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
-    // options.headers['Authorization'] = 'Bearer';
-    options.headers['accept'] = '*/*';
-    super.onRequest(options, handler);
+  DioManager._internal() {
+    dio = Dio(
+      BaseOptions(
+        baseUrl: ApiConstants.baseURL,
+        contentType: 'application/json',
+      ),
+    );
+    _configureInterceptors();
   }
 
-  @override
-  void onResponse(Response response, ResponseInterceptorHandler handler) {
-    super.onResponse(response, handler);
-    debugPrint('\n\n\nmessage: B ${response.data}\n\n\n');
-  }
+  void _configureInterceptors() {
+    // Add auth token interceptor
+    dio.interceptors.add(
+      InterceptorsWrapper(
+        onRequest: (options, handler) {
+          final token = TokenService.to.token;
+          if (token.isNotEmpty) {
+            options.headers['Authorization'] = token;
+          }
+          options.headers['accept'] = '*/*';
+          return handler.next(options);
+        },
+      ),
+    );
 
-  @override
-  void onError(DioException err, ErrorInterceptorHandler handler) {
-    if (err.response?.statusCode == 401 || err.response?.statusCode == 400) {
-      debugPrint('message : 401 yoki 400 chiqdi');
-      // fireSnackBar(err.response!.data['message'].toString().contains("already exists") ?"Bu foydalanuvchi ro'yxatdan o'tgan" :err.response?.data['message'].toString() ?? "" , ToastificationType.error);
+    // Add logging in debug mode
+    if (kDebugMode) {
+      dio.interceptors.add(
+        PrettyDioLogger(
+          requestBody: true,
+          responseBody: true,
+          compact: true,
+        ),
+      );
     }
-    if (err.type == DioExceptionType.badResponse) {
-      var response = err.response;
-      String? message = response?.data['message'];
-      debugPrint("Something went wrong $message");
+
+    // Add error handling interceptor
+    dio.interceptors.add(
+      InterceptorsWrapper(
+        onError: (DioException err, handler) {
+          debugPrint('API Error: ${err.message}');
+          // Handle specific status codes
+          if (err.response?.statusCode == 401) {
+            // Handle unauthorized - could refresh token or logout
+          }
+          return handler.next(err);
+        },
+      ),
+    );
+  }
+
+  // Configure certificate verification bypass for dev environments
+  static void configureHttpOverrides() {
+    if (!kReleaseMode) {
+      HttpOverrides.global = MyHttpOverrides();
     }
-    super.onError(err, handler);
   }
 }
 
@@ -54,7 +74,6 @@ class MyHttpOverrides extends HttpOverrides {
   @override
   HttpClient createHttpClient(SecurityContext? context) {
     return super.createHttpClient(context)
-      ..badCertificateCallback =
-          (X509Certificate cert, String host, int port) => true;
+      ..badCertificateCallback = (_, __, ___) => !kReleaseMode;
   }
 }

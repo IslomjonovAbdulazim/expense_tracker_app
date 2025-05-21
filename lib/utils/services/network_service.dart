@@ -1,14 +1,12 @@
 import 'package:dartz/dartz.dart';
 import 'package:dio/dio.dart';
-
+import '../../core/error/network_failure.dart';
 import '../constants/app_constants.dart';
-import '../errors/network_failure.dart';
 import '../helpers/logger.dart';
 
 class NetworkService {
   late final Dio _dio;
 
-  /// Constructor initializes Dio with base options and interceptors.
   NetworkService() {
     _dio = Dio(
       BaseOptions(
@@ -22,94 +20,88 @@ class NetworkService {
       InterceptorsWrapper(
         onRequest: (options, handler) {
           Logger.log("REQUEST[${options.method}] => PATH: ${options.path}");
-          return handler.next(options); // Continue to the request.
+          handler.next(options);
         },
         onResponse: (response, handler) {
-          Logger.log(
-              "RESPONSE[${response.statusCode}] => DATA: ${response.data}");
-          return handler.next(response); // Continue to the response.
+          Logger.log("RESPONSE[${response.statusCode}] => DATA: ${response.data}");
+          handler.next(response);
         },
         onError: (DioException e, handler) {
-          Logger.error(
-              "ERROR[${e.response?.statusCode}] => MESSAGE: ${e.message}");
-          return handler.next(e); // Continue with error handling.
+          Logger.error("ERROR[${e.response?.statusCode}] => MESSAGE: ${e.message}");
+          handler.next(e);
         },
       ),
     );
   }
 
-  /// Performs a GET request and returns an Either with a NetworkFailure or the response data.
+  // Generic HTTP request method to reduce code duplication
+  Future<Either<NetworkFailure, T>> _request<T>({
+    required String method,
+    required String endpoint,
+    dynamic data,
+    Map<String, dynamic>? queryParameters,
+  }) async {
+    try {
+      final response = await _dio.request(
+        endpoint,
+        data: data,
+        queryParameters: queryParameters,
+        options: Options(method: method),
+      );
+      return Right(response.data as T);
+    } on DioException catch (e) {
+      Logger.error("Dio $method error: ${e.message}");
+      return Left(NetworkFailure(
+        message: e.message ?? "Error",
+        statusCode: e.response?.statusCode,
+      ));
+    }
+  }
+
+  // Public methods using the generic request method
   Future<Either<NetworkFailure, T>> get<T>(
-    String endpoint, {
-    Map<String, dynamic>? queryParameters,
-  }) async {
-    try {
-      final response =
-          await _dio.get(endpoint, queryParameters: queryParameters);
-      return Right(response.data as T);
-    } on DioException catch (e) {
-      Logger.error("Dio GET error: ${e.message}");
-      return Left(NetworkFailure(
-        message: e.message ?? "Error",
-        statusCode: e.response?.statusCode,
-      ));
-    }
-  }
+      String endpoint, {
+        Map<String, dynamic>? queryParameters,
+      }) =>
+      _request<T>(
+          method: 'GET',
+          endpoint: endpoint,
+          queryParameters: queryParameters
+      );
 
-  /// Performs a POST request and returns an Either with a NetworkFailure or the response data.
   Future<Either<NetworkFailure, T>> post<T>(
-    String endpoint, {
-    dynamic data,
-    Map<String, dynamic>? queryParameters,
-  }) async {
-    try {
-      final response = await _dio.post(endpoint,
-          data: data, queryParameters: queryParameters);
-      return Right(response.data as T);
-    } on DioException catch (e) {
-      Logger.error("Dio POST error: ${e.message}");
-      return Left(NetworkFailure(
-        message: e.message ?? "Error",
-        statusCode: e.response?.statusCode,
-      ));
-    }
-  }
+      String endpoint, {
+        dynamic data,
+        Map<String, dynamic>? queryParameters,
+      }) =>
+      _request<T>(
+          method: 'POST',
+          endpoint: endpoint,
+          data: data,
+          queryParameters: queryParameters
+      );
 
-  /// Performs a PUT request and returns an Either with a NetworkFailure or the response data.
   Future<Either<NetworkFailure, T>> put<T>(
-    String endpoint, {
-    dynamic data,
-    Map<String, dynamic>? queryParameters,
-  }) async {
-    try {
-      final response = await _dio.put(endpoint,
-          data: data, queryParameters: queryParameters);
-      return Right(response.data as T);
-    } on DioException catch (e) {
-      Logger.error("Dio PUT error: ${e.message}");
-      return Left(NetworkFailure(
-        message: e.message ?? "Error",
-        statusCode: e.response?.statusCode,
-      ));
-    }
-  }
+      String endpoint, {
+        dynamic data,
+        Map<String, dynamic>? queryParameters,
+      }) =>
+      _request<T>(
+          method: 'PUT',
+          endpoint: endpoint,
+          data: data,
+          queryParameters: queryParameters
+      );
 
-  /// Performs a DELETE request and returns an Either with a NetworkFailure or the response data.
   Future<Either<NetworkFailure, T>> delete<T>(
-    String endpoint, {
-    dynamic data,
-    Map<String, dynamic>? queryParameters,
-  }) async {
-    try {
-      final response = await _dio.delete(endpoint,
-          data: data, queryParameters: queryParameters);
-      return Right(response.data as T);
-    } on DioException catch (e) {
-      Logger.error("Dio DELETE error: ${e.message}");
-      return Left(NetworkFailure(
-        message: e.message ?? "Error",
-        statusCode: e.response?.statusCode,
-      ));
-    }
-  }
+      String endpoint, {
+        dynamic data,
+        Map<String, dynamic>? queryParameters,
+      }) =>
+      _request<T>(
+          method: 'DELETE',
+          endpoint: endpoint,
+          data: data,
+          queryParameters: queryParameters
+      );
 }
