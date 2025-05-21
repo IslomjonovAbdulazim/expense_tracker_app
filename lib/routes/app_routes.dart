@@ -1,5 +1,7 @@
 import 'package:get/get.dart';
 
+import '../features/screens/pin_code/imports.dart';
+
 part 'app_pages.dart';
 
 class AppRoutes {
@@ -18,4 +20,5 @@ class AppRoutes {
   static const String upgrade = "/upgrade";
   static const String internalError = "/internal-error";
   static const String splash = "/splash";
+  static const String pinCode = "/pin-code";
 }

@@ -51,8 +51,7 @@ class MyApp extends StatelessWidget {
         darkTheme: AppTheme.darkTheme,
         themeMode: themeController.themeMode,
         debugShowCheckedModeBanner: false,
-        initialRoute:
-            TokenService.to.hasToken ? AppRoutes.admin : AppRoutes.home,
+        initialRoute: _determineInitialRoute(),
         initialBinding: InitialBinding(),
         getPages: AppPages.pages,
         builder: (context, child) => MediaQuery(
@@ -68,4 +67,18 @@ class MyApp extends StatelessWidget {
       );
     });
   }
+
+  String _determineInitialRoute() {
+    // Check if PIN is set
+    final storage = GetStorage();
+    final isPinProtected = storage.read('app_pin_code') != null;
+
+    if (isPinProtected) {
+      return AppRoutes.pinCode;
+    } else {
+      return TokenService.to.hasToken ? AppRoutes.admin : AppRoutes.home;
+    }
+  }
 }
+
+
