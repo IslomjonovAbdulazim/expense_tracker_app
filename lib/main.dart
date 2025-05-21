@@ -46,7 +46,7 @@ class MyApp extends StatelessWidget {
     final ThemeController themeController = Get.find<ThemeController>();
     return Obx(() {
       return GetMaterialApp(
-        title: 'IUT Football',
+        title: 'ExpenseTracker',
         theme: AppTheme.lightTheme,
         darkTheme: AppTheme.darkTheme,
         themeMode: themeController.themeMode,
