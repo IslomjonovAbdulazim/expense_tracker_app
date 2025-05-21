@@ -4,19 +4,38 @@ import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 
-import 'core/di/service_locator.dart';
-import 'core/translations/translation_service.dart';
+import 'core/di/initial_binding.dart';
+import 'routes/app_routes.dart';
+import 'utils/services/theme_service.dart';
+import 'utils/services/token_service.dart';
 import 'utils/themes/app_theme.dart';
 
-Future<void> main() async {
+void main() async {
+  // Ensure Flutter is initialized
   WidgetsFlutterBinding.ensureInitialized();
 
-  await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+  // Force portrait orientation
+  await SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+  ]);
 
+  // Initialize local storage
   await GetStorage.init();
 
-  await setupServiceLocator();
+  // For SSL certificate bypass in development (if needed)
+  // HttpOverrides.global = MyHttpOverrides();
 
+  // Initialize services
+  await Get.putAsync<TokenService>(() async => await TokenService().init());
+  Get.put(ThemeController());
+
+  // Initialize system UI settings
+  SystemChrome.setEnabledSystemUIMode(
+    SystemUiMode.manual,
+    overlays: SystemUiOverlay.values,
+  );
+
+  // Run the app
   runApp(const MyApp());
 }
 
@@ -25,35 +44,41 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final TranslationService translationService = Get.put(TranslationService());
-    return GetMaterialApp.router(
-      title: 'Expense',
-      theme: AppTheme.lightTheme,
-      darkTheme: AppTheme.darkTheme,
-      themeMode: ThemeMode.system,
-      debugShowCheckedModeBanner: false,
-      translations: translationService,
-      locale: translationService.getSavedLanguage(),
-      fallbackLocale: TranslationService.fallbackLocale,
-      getPages: AppPages.routes,
-      initialBinding: AppBinding(),
-      defaultTransition: Transition.native,
-      builder: (context, child) {
-        if (child == null) return const SizedBox.shrink();
+    final ThemeController themeController = Get.find<ThemeController>();
 
-        return MediaQuery(
+    return Obx(() {
+      return GetMaterialApp(
+        title: 'ExpenseTracker',
+        theme: AppTheme.lightTheme,
+        darkTheme: AppTheme.darkTheme,
+        themeMode: themeController.themeMode,
+        debugShowCheckedModeBanner: false,
+        initialRoute: _determineInitialRoute(),
+        initialBinding: InitialBinding(),
+        getPages: AppPages.routes,
+        builder: (context, child) => MediaQuery(
           data: MediaQuery.of(context).copyWith(
             textScaler: TextScaler.noScaling,
             boldText: false,
           ),
-          child: child,
-        );
-      },
-    );
+          child: ScrollConfiguration(
+            behavior: const ScrollBehavior(),
+            child: child ?? const Scaffold(),
+          ),
+        ),
+      );
+    });
   }
-}
 
-class AppBinding extends Bindings {
-  @override
-  void dependencies() {}
+  String _determineInitialRoute() {
+    // Check if PIN is set
+    final storage = GetStorage();
+    final isPinProtected = storage.read('app_pin_code') != null;
+
+    if (isPinProtected) {
+      return AppRoutes.pinCode;
+    } else {
+      return AppRoutes.language;
+    }
+  }
 }
