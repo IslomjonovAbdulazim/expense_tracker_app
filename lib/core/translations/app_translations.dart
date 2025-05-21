@@ -4,8 +4,8 @@ import 'languages/uz_uz.dart';
 
 abstract class AppTranslations {
   static Map<String, Map<String, String>> translations = {
-    'en_US': enUS,
-    'ru_RU': ruRU,
-    'uz_UZ': uzUZ,
+    'en_US': enUs,
+    'ru_RU': ruRu,
+    'uz_UZ': uzUz,
   };
 }

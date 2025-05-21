@@ -1,50 +1,23 @@
+// lib/core/translations/ru_ru.dart
 import '../translation_keys.dart';
 
-// Russian Translations
-const Map<String, String> ruRU = {
-  // General
-  TKeys.appName: 'Трекер Расходов',
+Map<String, String> get ruRu => {
+  AppTranslationKeys.appName: 'Трекер Расходов',
+  AppTranslationKeys.login: 'Вход',
+  AppTranslationKeys.register: 'Регистрация',
+  AppTranslationKeys.email: 'Электронная почта',
+  AppTranslationKeys.password: 'Пароль',
 
-  // Auth
-  TKeys.login: 'Вход',
-  TKeys.register: 'Регистрация',
-  TKeys.email: 'Электронная почта',
-  TKeys.password: 'Пароль',
-  TKeys.forgotPassword: 'Забыли пароль?',
-  TKeys.continueWith: 'Или продолжить с',
+  AppTranslationKeys.home: 'Главная',
+  AppTranslationKeys.transactions: 'Транзакции',
+  AppTranslationKeys.statistics: 'Статистика',
+  AppTranslationKeys.profile: 'Профиль',
 
-  // Home
-  TKeys.home: 'Главная',
-  TKeys.transactions: 'Транзакции',
-  TKeys.statistics: 'Статистика',
-  TKeys.profile: 'Профиль',
+  AppTranslationKeys.settings: 'Настройки',
+  AppTranslationKeys.language: 'Язык',
+  AppTranslationKeys.theme: 'Тема',
 
-  // Dashboard
-  TKeys.dashboard: 'Панель управления',
-  TKeys.totalBalance: 'Общий баланс',
-  TKeys.income: 'Доход',
-  TKeys.expense: 'Расход',
-  TKeys.quickActions: 'Быстрые действия',
-  TKeys.addIncome: 'Добавить доход',
-  TKeys.addExpense: 'Добавить расход',
-  TKeys.transfer: 'Перевод',
-  TKeys.reports: 'Отчеты',
-  TKeys.recentTransactions: 'Последние транзакции',
-
-  // Settings
-  TKeys.settings: 'Настройки',
-  TKeys.language: 'Язык',
-  TKeys.theme: 'Тема',
-  TKeys.darkMode: 'Темная тема',
-  TKeys.lightMode: 'Светлая тема',
-  TKeys.systemDefault: 'Системная',
-  TKeys.notification: 'Уведомления',
-  TKeys.security: 'Безопасность',
-  TKeys.about: 'О приложении',
-  TKeys.logout: 'Выйти',
-
-  // Languages
-  TKeys.english: 'Английский',
-  TKeys.russian: 'Русский',
-  TKeys.uzbek: 'Узбекский',
+  AppTranslationKeys.english: 'Английский',
+  AppTranslationKeys.russian: 'Русский',
+  AppTranslationKeys.uzbek: 'Узбекский',
 };
