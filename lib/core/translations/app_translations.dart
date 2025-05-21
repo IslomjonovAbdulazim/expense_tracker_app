@@ -1,0 +1,11 @@
+import 'languages/en_us.dart';
+import 'languages/ru_ru.dart';
+import 'languages/uz_uz.dart';
+
+abstract class AppTranslations {
+  static Map<String, Map<String, String>> translations = {
+    'en_US': enUS,
+    'ru_RU': ruRU,
+    'uz_UZ': uzUZ,
+  };
+}

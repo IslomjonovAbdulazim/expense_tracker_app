@@ -1,6 +1,6 @@
 part of 'imports.dart';
 
-class PinCodeController extends GetxController {
+class _Controller extends GetxController {
   static const PIN_LENGTH = 4;
   static const _PIN_STORAGE_KEY = 'app_pin_code';
 

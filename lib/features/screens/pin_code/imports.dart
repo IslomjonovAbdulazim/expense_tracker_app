@@ -7,7 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../routes/app_routes.dart';
 
-part '_binding.dart';
-part '_controller.dart';
-part '_page.dart';
-part '_widgets.dart';
+part 'binding.dart';
+part 'controller.dart';
+part 'page.dart';
+part 'widgets.dart';

@@ -1,6 +1,6 @@
 part of 'imports.dart';
 
-class PinCodePage extends GetView<PinCodeController> {
+class PinCodePage extends GetView<_Controller> {
   const PinCodePage({super.key});
 
   @override
@@ -70,7 +70,7 @@ class PinCodePage extends GetView<PinCodeController> {
 
             // PIN dots
             Obx(() => _PinDots(
-              length: PinCodeController.PIN_LENGTH,
+              length: _Controller.PIN_LENGTH,
               pin: controller.pin.value,
             )),
 
