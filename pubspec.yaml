@@ -91,8 +91,6 @@ flutter:
 
   assets:
     - assets/icons/
-    - assets/images/
-    - assets/lotties/
     - assets/brand/
     - assets/sounds/
 
@@ -240,12 +238,10 @@ flutter:
           weight: 600
           style: italic
 
-
 flutter_icons:
   android: true
   ios: true
   image_path: "assets/brand/logo.png"
-  adaptive_icon_background: "#FFFFFF"
-
+  adaptive_icon_background: "#0D47A1"  # Blue background color
 
 
