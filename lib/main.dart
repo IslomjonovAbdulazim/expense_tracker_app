@@ -63,6 +63,7 @@ class MyApp extends StatelessWidget {
         getPages: AppPages.routes,
         defaultTransition: Transition.cupertino,
         builder: _appBuilder,
+        home: const Scaffold(body: Center(child: CircularProgressIndicator())),
       );
     });
   }
