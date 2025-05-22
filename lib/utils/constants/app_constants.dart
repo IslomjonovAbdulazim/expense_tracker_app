@@ -19,6 +19,7 @@ class StorageKeys {
   static const String pinHash = "pin_hash";
   static const String appPausedAt = "app_paused_at";
   static const String hasCompletedOnboarding = "has_completed_onboarding";
+  static const String hasCompletedPreferences = "has_completed_preferences"; // NEW
   static const String authToken = "auth_token";
   static const String refreshToken = "refresh_token";
   static const String userProfile = "user_profile";
@@ -26,6 +27,7 @@ class StorageKeys {
   // App Settings
   static const String selectedTheme = "selected_theme";
   static const String selectedLanguage = "selected_language";
+  static const String selectedCurrency = "selected_currency"; // NEW
   static const String notificationsEnabled = "notifications_enabled";
   static const String biometricsEnabled = "biometrics_enabled";
 

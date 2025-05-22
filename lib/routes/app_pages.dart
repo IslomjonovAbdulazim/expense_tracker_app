@@ -1,18 +1,19 @@
-// lib/routes/app_pages.dart
-import 'package:expense_tracker_app/features/auth/binding/auth_binding.dart';
-import 'package:expense_tracker_app/features/auth/middleware/auth_middleware.dart';
-import 'package:expense_tracker_app/features/auth/page/auth_page.dart';
-import 'package:expense_tracker_app/features/auth/page/forgot_password_page.dart';
-import 'package:expense_tracker_app/features/screens/oboarding/imports.dart';
-import 'package:flutter/cupertino.dart';
+import 'package:flutter/animation.dart';
 import 'package:get/get.dart';
 
+import '../features/auth/binding/auth_binding.dart';
+import '../features/auth/middleware/auth_middleware.dart';
+import '../features/auth/page/auth_page.dart';
 import '../features/auth/page/email_verification_page.dart';
+import '../features/auth/page/forgot_password_page.dart';
 import '../features/home/imports.dart';
 import '../features/screens/language/imports.dart';
+import '../features/screens/oboarding/imports.dart';
 import '../features/screens/offline/imports.dart';
 import '../features/screens/pin_code/imports.dart';
 import '../features/screens/splash/imports.dart';
+import '../features/setup/language_setup/imports.dart';
+import '../features/setup/theme_setup/imports.dart';
 import 'app_routes.dart';
 
 class AppPages {
@@ -24,6 +25,34 @@ class AppPages {
       binding: SplashBinding(),
       transition: Transition.noTransition,
       transitionDuration: Duration.zero,
+    ),
+
+    // Setup/Preference routes (NEW - before onboarding)
+    GetPage(
+      name: AppRoutes.languageSetup,
+      page: () => const LanguageSetupPage(),
+      binding: LanguageSetupBinding(),
+      transition: Transition.rightToLeft,
+      transitionDuration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+    ),
+
+    GetPage(
+      name: AppRoutes.themeSetup,
+      page: () => const ThemeSetupPage(),
+      binding: ThemeSetupBinding(),
+      transition: Transition.rightToLeft,
+      transitionDuration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+    ),
+
+    GetPage(
+      name: AppRoutes.currencySetup,
+      page: () => const CurrencySetupPage(),
+      binding: CurrencySetupBinding(),
+      transition: Transition.rightToLeft,
+      transitionDuration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
     ),
 
     // Onboarding - Smooth slide transition
@@ -183,44 +212,4 @@ class AppPages {
       curve: Curves.easeIn,
     ),
   ];
-
-  // Custom transition builders for specific use cases
-  static Widget _slideUpTransition(
-      BuildContext context,
-      Animation<double> animation,
-      Animation<double> secondaryAnimation,
-      Widget child,
-      ) {
-    return SlideTransition(
-      position: Tween<Offset>(
-        begin: const Offset(0.0, 1.0),
-        end: Offset.zero,
-      ).animate(CurvedAnimation(
-        parent: animation,
-        curve: Curves.easeOutCubic,
-      )),
-      child: child,
-    );
-  }
-
-  static Widget _scaleTransition(
-      BuildContext context,
-      Animation<double> animation,
-      Animation<double> secondaryAnimation,
-      Widget child,
-      ) {
-    return ScaleTransition(
-      scale: Tween<double>(
-        begin: 0.8,
-        end: 1.0,
-      ).animate(CurvedAnimation(
-        parent: animation,
-        curve: Curves.easeOutBack,
-      )),
-      child: FadeTransition(
-        opacity: animation,
-        child: child,
-      ),
-    );
-  }
 }
