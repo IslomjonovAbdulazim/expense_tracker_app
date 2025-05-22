@@ -21,6 +21,9 @@ dependencies:
   crypto: ^3.0.6
   flutter_dynamic_icon: ^2.1.0
   device_preview: ^1.2.0
+  google_sign_in: ^6.3.0
+  sign_in_with_apple: ^7.0.1
+  firebase_auth: ^5.5.4
 
   # Networking
   dio: ^5.8.0+1             # HTTP client
