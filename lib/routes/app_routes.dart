@@ -1,7 +1,6 @@
 // app_routes.dart
 class AppRoutes {
   // Core feature routes
-  static const String splash = '/splash';
   static const String home = '/home';
   static const String admin = '/admin';
 
@@ -19,4 +18,5 @@ class AppRoutes {
   static const String internalError = '/internal-error';
   static const String language = '/language';
   static const String onboarding = '/onboarding';
+  static const String splash = "/splash";
 }

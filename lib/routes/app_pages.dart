@@ -5,6 +5,7 @@ import '../features/home/imports.dart';
 import '../features/screens/language/imports.dart';
 import '../features/screens/offline/imports.dart';
 import '../features/screens/pin_code/imports.dart';
+import '../features/screens/splash/imports.dart';
 import 'app_routes.dart';
 // Import other feature pages/bindings
 
@@ -44,6 +45,11 @@ class AppPages {
       page: () => const OnboardingPage(),
       binding: OnboardingBinding(),
       transition: Transition.fadeIn,
+    ),
+    GetPage(
+      name: AppRoutes.splash,
+      page: () => const SplashPage(),
+      binding: SplashBinding(),
     ),
   ];
 }

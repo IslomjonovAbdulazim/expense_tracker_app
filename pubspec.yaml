@@ -20,6 +20,7 @@ dependencies:
   flutter_secure_storage: ^9.2.4
   crypto: ^3.0.6
   flutter_dynamic_icon: ^2.1.0
+  device_preview: ^1.2.0
 
   # Networking
   dio: ^5.8.0+1             # HTTP client
