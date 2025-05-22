@@ -8,7 +8,7 @@ import '../../../data/models/auth_models.dart';
 import '../../../utils/services/auth_service.dart';
 
 class AuthController extends GetxController {
-  late final AuthService _authService;
+  AuthService? _authService;
 
   // Form keys
   final loginFormKey = GlobalKey<FormState>();
@@ -36,6 +36,7 @@ class AuthController extends GetxController {
   final obscureConfirmPassword = true.obs;
   final isLoginMode = true.obs;
   final acceptTerms = false.obs;
+  final isServiceReady = false.obs;
 
   @override
   void onInit() {
@@ -43,25 +44,47 @@ class AuthController extends GetxController {
     _initializeAuthService();
   }
 
-  void _initializeAuthService() {
+  Future<void> _initializeAuthService() async {
     try {
-      if (Get.isRegistered<AuthService>()) {
-        _authService = Get.find<AuthService>();
-        // Listen to auth state changes
-        ever(_authService.authState, _handleAuthStateChange);
-        Logger.success('AuthController initialized with AuthService');
-      } else {
-        Logger.error('AuthService not registered - auth will not work');
+      Logger.log('AuthController: Initializing auth service...');
+
+      // Wait for AuthService to be registered
+      int attempts = 0;
+      const maxAttempts = 20; // 10 seconds max
+
+      while (attempts < maxAttempts) {
+        if (Get.isRegistered<AuthService>()) {
+          _authService = Get.find<AuthService>();
+
+          // Wait for AuthService to be initialized
+          await _authService!.waitForInitialization();
+
+          // Listen to auth state changes
+          ever(_authService!.authState, _handleAuthStateChange);
+
+          isServiceReady.value = true;
+          Logger.success('AuthController initialized with AuthService');
+          return;
+        }
+
+        attempts++;
+        await Future.delayed(const Duration(milliseconds: 500));
+        Logger.log('AuthController: Waiting for AuthService... (${attempts}/${maxAttempts})');
       }
+
+      Logger.error('AuthController: AuthService not available after timeout');
+      _showErrorSnackbar('Authentication service unavailable. Please restart the app.');
+
     } catch (e) {
       Logger.error('Failed to initialize AuthController: $e');
+      _showErrorSnackbar('Failed to initialize authentication. Please restart the app.');
     }
   }
 
   // Getters for auth service state (with null safety)
   AuthState get authState {
     try {
-      return _authService.authState.value;
+      return _authService?.authState.value ?? const AuthState.unauthenticated();
     } catch (e) {
       return const AuthState.unauthenticated();
     }
@@ -69,7 +92,7 @@ class AuthController extends GetxController {
 
   User? get currentUser {
     try {
-      return _authService.currentUser.value;
+      return _authService?.currentUser.value;
     } catch (e) {
       return null;
     }
@@ -77,7 +100,7 @@ class AuthController extends GetxController {
 
   bool get isAuthenticated {
     try {
-      return _authService.isAuthenticated;
+      return _authService?.isAuthenticated ?? false;
     } catch (e) {
       return false;
     }
@@ -170,6 +193,15 @@ class AuthController extends GetxController {
     acceptTerms.value = false;
   }
 
+  /// Check if service is ready before making calls
+  bool _checkServiceReady() {
+    if (_authService == null || !isServiceReady.value) {
+      _showErrorSnackbar('Authentication service is not ready. Please wait and try again.');
+      return false;
+    }
+    return true;
+  }
+
   /// Toggle between login and register modes
   void toggleAuthMode() {
     isLoginMode.value = !isLoginMode.value;
@@ -187,6 +219,7 @@ class AuthController extends GetxController {
 
   /// Email/Password Login
   Future<void> loginWithEmail() async {
+    if (!_checkServiceReady()) return;
     if (!loginFormKey.currentState!.validate()) return;
 
     try {
@@ -195,19 +228,23 @@ class AuthController extends GetxController {
         password: passwordController.text,
       );
 
-      final result = await _authService.loginWithEmail(request);
+      final result = await _authService!.loginWithEmail(request);
       result.fold(
-            (failure) => Logger.error('Login failed: ${failure.message}'),
+            (failure) {
+          Logger.error('Login failed: ${failure.message}');
+          _showErrorSnackbar(failure.message ?? 'Login failed. Please try again.');
+        },
             (user) => Logger.success('Login successful'),
       );
     } catch (e) {
       Logger.error('Login error: $e');
-      _showErrorSnackbar('Login failed. Please try again.');
+      _showErrorSnackbar('Login failed. Please check your connection and try again.');
     }
   }
 
   /// Email/Password Registration
   Future<void> registerWithEmail() async {
+    if (!_checkServiceReady()) return;
     if (!registerFormKey.currentState!.validate()) return;
 
     if (!acceptTerms.value) {
@@ -225,47 +262,61 @@ class AuthController extends GetxController {
             : null,
       );
 
-      final result = await _authService.registerWithEmail(request);
+      final result = await _authService!.registerWithEmail(request);
       result.fold(
-            (failure) => Logger.error('Registration failed: ${failure.message}'),
+            (failure) {
+          Logger.error('Registration failed: ${failure.message}');
+          _showErrorSnackbar(failure.message ?? 'Registration failed. Please try again.');
+        },
             (user) => Logger.success('Registration successful'),
       );
     } catch (e) {
       Logger.error('Registration error: $e');
-      _showErrorSnackbar('Registration failed. Please try again.');
+      _showErrorSnackbar('Registration failed. Please check your connection and try again.');
     }
   }
 
   /// Google Sign In
   Future<void> signInWithGoogle() async {
+    if (!_checkServiceReady()) return;
+
     try {
-      final result = await _authService.signInWithGoogle();
+      final result = await _authService!.signInWithGoogle();
       result.fold(
-            (failure) => Logger.error('Google sign in failed: ${failure.message}'),
+            (failure) {
+          Logger.error('Google sign in failed: ${failure.message}');
+          _showErrorSnackbar(failure.message ?? 'Google sign in failed. Please try again.');
+        },
             (user) => Logger.success('Google sign in successful'),
       );
     } catch (e) {
       Logger.error('Google sign in error: $e');
-      _showErrorSnackbar('Google sign in failed. Please try again.');
+      _showErrorSnackbar('Google sign in failed. Please check your connection and try again.');
     }
   }
 
   /// Apple Sign In
   Future<void> signInWithApple() async {
+    if (!_checkServiceReady()) return;
+
     try {
-      final result = await _authService.signInWithApple();
+      final result = await _authService!.signInWithApple();
       result.fold(
-            (failure) => Logger.error('Apple sign in failed: ${failure.message}'),
+            (failure) {
+          Logger.error('Apple sign in failed: ${failure.message}');
+          _showErrorSnackbar(failure.message ?? 'Apple sign in failed. Please try again.');
+        },
             (user) => Logger.success('Apple sign in successful'),
       );
     } catch (e) {
       Logger.error('Apple sign in error: $e');
-      _showErrorSnackbar('Apple sign in failed. Please try again.');
+      _showErrorSnackbar('Apple sign in failed. Please check your connection and try again.');
     }
   }
 
   /// Reset Password
   Future<void> resetPassword() async {
+    if (!_checkServiceReady()) return;
     if (!resetPasswordFormKey.currentState!.validate()) return;
 
     try {
@@ -273,7 +324,7 @@ class AuthController extends GetxController {
         email: resetEmailController.text.trim(),
       );
 
-      final result = await _authService.resetPassword(request);
+      final result = await _authService!.resetPassword(request);
       result.fold(
             (failure) => _showErrorSnackbar(failure.message ?? 'Reset failed'),
             (success) {
@@ -283,30 +334,34 @@ class AuthController extends GetxController {
       );
     } catch (e) {
       Logger.error('Reset password error: $e');
-      _showErrorSnackbar('Reset failed. Please try again.');
+      _showErrorSnackbar('Reset failed. Please check your connection and try again.');
     }
   }
 
   /// Resend Verification Email
   Future<void> resendVerificationEmail() async {
+    if (!_checkServiceReady()) return;
+
     try {
-      final result = await _authService.resendVerificationEmail();
+      final result = await _authService!.resendVerificationEmail();
       result.fold(
             (failure) => _showErrorSnackbar(failure.message ?? 'Failed to resend email'),
             (success) => _showSuccessSnackbar('Verification email sent'),
       );
     } catch (e) {
       Logger.error('Resend verification error: $e');
-      _showErrorSnackbar('Failed to resend email. Please try again.');
+      _showErrorSnackbar('Failed to resend email. Please check your connection and try again.');
     }
   }
 
   /// Verify Email with Token
   Future<void> verifyEmail(String token) async {
+    if (!_checkServiceReady()) return;
+
     try {
       final request = VerifyEmailRequest(token: token);
 
-      final result = await _authService.verifyEmail(request);
+      final result = await _authService!.verifyEmail(request);
       result.fold(
             (failure) => _showErrorSnackbar(failure.message ?? 'Verification failed'),
             (success) {
@@ -316,14 +371,16 @@ class AuthController extends GetxController {
       );
     } catch (e) {
       Logger.error('Email verification error: $e');
-      _showErrorSnackbar('Verification failed. Please try again.');
+      _showErrorSnackbar('Verification failed. Please check your connection and try again.');
     }
   }
 
   /// Logout
   Future<void> logout() async {
+    if (!_checkServiceReady()) return;
+
     try {
-      await _authService.logout();
+      await _authService!.logout();
       Get.offAllNamed(AppRoutes.auth);
     } catch (e) {
       Logger.error('Logout error: $e');

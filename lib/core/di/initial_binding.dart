@@ -15,70 +15,30 @@ class InitialBinding extends Bindings {
     Logger.log('InitialBinding: Starting dependency registration...');
 
     try {
-      // Core services (these should already be registered from main.dart)
-      _ensureCoreServices();
+      // Register bindings but don't initialize services here
+      // Services are initialized in service_locator.dart
+      _registerControllers();
 
-      // Additional services that might not be registered yet
-      _registerAdditionalServices();
-
-      Logger.success('InitialBinding: All dependencies registered successfully');
+      Logger.success('InitialBinding: All bindings registered successfully');
     } catch (e) {
-      Logger.error('InitialBinding: Error registering dependencies: $e');
+      Logger.error('InitialBinding: Error registering bindings: $e');
     }
   }
 
-  void _ensureCoreServices() {
-    // Ensure ThemeController is initialized
+  void _registerControllers() {
+    // Ensure core controllers are available (these should already be registered)
     if (!Get.isRegistered<ThemeController>()) {
       Get.put(ThemeController(), permanent: true);
       Logger.log('InitialBinding: ThemeController registered');
     }
 
-    // Ensure LanguageController is initialized
     if (!Get.isRegistered<LanguageController>()) {
       Get.put(LanguageController(), permanent: true);
       Logger.log('InitialBinding: LanguageController registered');
     }
 
-    // Ensure TokenService is initialized
-    if (!Get.isRegistered<TokenService>()) {
-      Get.put(TokenService(), permanent: true);
-      Logger.log('InitialBinding: TokenService registered');
-    }
-
-    // Ensure NetworkService is initialized
-    if (!Get.isRegistered<NetworkService>()) {
-      final networkService = NetworkService();
-      Get.put(networkService, permanent: true);
-      Logger.log('InitialBinding: NetworkService registered');
-    }
-  }
-
-  void _registerAdditionalServices() {
-    // Register AuthService if not already done
-    if (!Get.isRegistered<AuthService>()) {
-      final authService = AuthService();
-      Get.put(authService, permanent: true);
-      Logger.log('InitialBinding: AuthService registered');
-    }
-
-    // Register ConnectivityService if not already done
-    if (!Get.isRegistered<ConnectivityService>()) {
-      Get.put(ConnectivityService(), permanent: true);
-      Logger.log('InitialBinding: ConnectivityService registered');
-    }
-
-    // Initialize PIN service if available
-    /*
-    if (!Get.isRegistered<EnhancedPinService>()) {
-      try {
-        final pinService = EnhancedPinService();
-        Get.put(pinService, permanent: true);
-        Logger.log('InitialBinding: EnhancedPinService registered');
-      } catch (e) {
-        Logger.warning('InitialBinding: Failed to register EnhancedPinService: $e');
-      }
-    }
-    */
+    // Note: Other services are handled by service_locator.dart
+    // We just ensure they're accessible here if needed
+    Logger.log('InitialBinding: Core controllers ensured');
   }
 }

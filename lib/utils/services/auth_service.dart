@@ -5,6 +5,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:firebase_auth/firebase_auth.dart' as fb;
 import 'package:firebase_core/firebase_core.dart';
+import 'dart:io';
 
 import '../../core/network/network_service.dart';
 import '../../utils/services/token_service.dart';
@@ -15,9 +16,9 @@ import '../../data/models/auth_models.dart';
 class AuthService extends GetxService {
   static AuthService get to => Get.find();
 
-  // Late initialization to avoid circular dependency
-  late final NetworkService _networkService;
-  late final TokenService _tokenService;
+  // Dependencies - marked as nullable for safety
+  NetworkService? _networkService;
+  TokenService? _tokenService;
 
   // Firebase Auth instance (nullable for safety)
   fb.FirebaseAuth? _firebaseAuth;
@@ -32,44 +33,70 @@ class AuthService extends GetxService {
   final Rx<AuthState> authState = const AuthState.initial().obs;
   final Rx<User?> currentUser = Rx<User?>(null);
 
+  // Initialization status
+  bool _isInitialized = false;
+
   @override
   void onInit() {
     super.onInit();
-    _initializeServices();
-    _initializeFirebase();
-    _initializeAuthState();
+    _initializeAsync();
   }
 
-  void _initializeServices() {
+  Future<void> _initializeAsync() async {
     try {
-      // Get services with null safety
-      if (Get.isRegistered<NetworkService>()) {
-        _networkService = Get.find<NetworkService>();
-      } else {
-        throw Exception('NetworkService not registered');
-      }
+      Logger.log('AuthService: Starting initialization...');
 
-      if (Get.isRegistered<TokenService>()) {
-        _tokenService = Get.find<TokenService>();
-      } else {
-        throw Exception('TokenService not registered');
-      }
+      await _initializeServices();
+      await _initializeFirebase();
+      await _initializeAuthState();
 
-      Logger.success('AuthService dependencies initialized');
+      _isInitialized = true;
+      Logger.success('AuthService: Initialization completed');
     } catch (e) {
       Logger.error('AuthService initialization failed: $e');
-      // Set to unauthenticated state if services are missing
       authState.value = const AuthState.unauthenticated();
     }
   }
 
-  void _initializeFirebase() {
+  Future<void> _initializeServices() async {
+    try {
+      // Wait for services to be registered with timeout
+      int retries = 0;
+      const maxRetries = 10;
+      const retryDelay = Duration(milliseconds: 500);
+
+      while (retries < maxRetries) {
+        if (Get.isRegistered<NetworkService>() && Get.isRegistered<TokenService>()) {
+          _networkService = Get.find<NetworkService>();
+          _tokenService = Get.find<TokenService>();
+          Logger.success('AuthService: Dependencies found');
+          return;
+        }
+
+        retries++;
+        Logger.log('AuthService: Waiting for dependencies... (${retries}/${maxRetries})');
+        await Future.delayed(retryDelay);
+      }
+
+      throw Exception('Required services not available after ${maxRetries} retries');
+    } catch (e) {
+      Logger.error('AuthService: Service initialization failed: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> _initializeFirebase() async {
     try {
       // Check if Firebase is available and initialized
       if (Firebase.apps.isNotEmpty) {
         _firebaseAuth = fb.FirebaseAuth.instance;
         _firebaseAvailable = true;
         Logger.success('Firebase Auth initialized');
+
+        // Listen to Firebase auth state changes
+        _firebaseAuth!.authStateChanges().listen((fb.User? user) {
+          Logger.log('Firebase auth state changed: ${user?.uid}');
+        });
       } else {
         Logger.warning('Firebase not available - social auth disabled');
         _firebaseAvailable = false;
@@ -83,33 +110,56 @@ class AuthService extends GetxService {
   Future<void> _initializeAuthState() async {
     try {
       // Check if user has valid token
-      if (_tokenService.hasToken) {
+      if (_tokenService?.hasToken == true) {
+        Logger.log('AuthService: Found existing token, checking validity...');
+
         final result = await _getCurrentUser();
         result.fold(
               (failure) {
             Logger.error('Failed to get current user: ${failure.message}');
+            // Token might be expired, clear it
+            _tokenService?.clearToken();
             authState.value = const AuthState.unauthenticated();
           },
               (user) {
+            Logger.success('AuthService: User authenticated from stored token');
             currentUser.value = user;
             authState.value = AuthState.authenticated(user);
           },
         );
       } else {
+        Logger.log('AuthService: No existing token found');
         authState.value = const AuthState.unauthenticated();
       }
     } catch (e) {
-      Logger.error('Auth initialization error: $e');
+      Logger.error('Auth state initialization error: $e');
       authState.value = const AuthState.unauthenticated();
     }
+  }
+
+  // Ensure services are available before making API calls
+  bool _ensureServicesAvailable() {
+    if (_networkService == null || _tokenService == null) {
+      Logger.error('AuthService: Required services not available');
+      authState.value = const AuthState.error('Authentication services not available');
+      return false;
+    }
+    return true;
   }
 
   /// Email/Password Authentication
   Future<Either<NetworkFailure, User>> loginWithEmail(LoginRequest request) async {
     try {
+      if (!_ensureServicesAvailable()) {
+        return Left(NetworkFailure(
+          message: 'Authentication services not available',
+          statusCode: null,
+        ));
+      }
+
       authState.value = const AuthState.loading();
 
-      final result = await _networkService.post<Map<String, dynamic>>(
+      final result = await _networkService!.post<Map<String, dynamic>>(
         '/auth/login',
         data: request.toJson(),
       );
@@ -120,17 +170,26 @@ class AuthService extends GetxService {
           return Left(failure);
         },
             (data) async {
-          final response = AuthResponse.fromJson(data);
-          await _tokenService.saveToken(response.accessToken);
-          if (response.refreshToken != null) {
-            await _tokenService.saveRefreshToken(response.refreshToken!);
+          try {
+            final response = AuthResponse.fromJson(data);
+            await _tokenService!.saveToken(response.accessToken);
+            if (response.refreshToken != null) {
+              await _tokenService!.saveRefreshToken(response.refreshToken!);
+            }
+
+            currentUser.value = response.user;
+            authState.value = AuthState.authenticated(response.user);
+
+            Logger.success('User logged in successfully');
+            return Right(response.user);
+          } catch (e) {
+            Logger.error('Login response parsing failed: $e');
+            authState.value = AuthState.error('Login response invalid');
+            return Left(NetworkFailure(
+              message: 'Invalid login response',
+              statusCode: null,
+            ));
           }
-
-          currentUser.value = response.user;
-          authState.value = AuthState.authenticated(response.user);
-
-          Logger.success('User logged in successfully');
-          return Right(response.user);
         },
       );
     } catch (e) {
@@ -146,9 +205,16 @@ class AuthService extends GetxService {
 
   Future<Either<NetworkFailure, User>> registerWithEmail(RegisterRequest request) async {
     try {
+      if (!_ensureServicesAvailable()) {
+        return Left(NetworkFailure(
+          message: 'Authentication services not available',
+          statusCode: null,
+        ));
+      }
+
       authState.value = const AuthState.loading();
 
-      final result = await _networkService.post<Map<String, dynamic>>(
+      final result = await _networkService!.post<Map<String, dynamic>>(
         '/auth/register',
         data: request.toJson(),
       );
@@ -159,17 +225,26 @@ class AuthService extends GetxService {
           return Left(failure);
         },
             (data) async {
-          final response = AuthResponse.fromJson(data);
-          await _tokenService.saveToken(response.accessToken);
-          if (response.refreshToken != null) {
-            await _tokenService.saveRefreshToken(response.refreshToken!);
+          try {
+            final response = AuthResponse.fromJson(data);
+            await _tokenService!.saveToken(response.accessToken);
+            if (response.refreshToken != null) {
+              await _tokenService!.saveRefreshToken(response.refreshToken!);
+            }
+
+            currentUser.value = response.user;
+            authState.value = AuthState.authenticated(response.user);
+
+            Logger.success('User registered successfully');
+            return Right(response.user);
+          } catch (e) {
+            Logger.error('Registration response parsing failed: $e');
+            authState.value = AuthState.error('Registration response invalid');
+            return Left(NetworkFailure(
+              message: 'Invalid registration response',
+              statusCode: null,
+            ));
           }
-
-          currentUser.value = response.user;
-          authState.value = AuthState.authenticated(response.user);
-
-          Logger.success('User registered successfully');
-          return Right(response.user);
         },
       );
     } catch (e) {
@@ -186,7 +261,7 @@ class AuthService extends GetxService {
   /// Google Sign In
   Future<Either<NetworkFailure, User>> signInWithGoogle() async {
     if (!_firebaseAvailable) {
-      const error = 'Firebase not available - cannot use Google Sign In';
+      const error = 'Google Sign In is not available';
       Logger.error(error);
       authState.value = const AuthState.error(error);
       return Left(NetworkFailure(
@@ -195,8 +270,18 @@ class AuthService extends GetxService {
       ));
     }
 
+    if (!_ensureServicesAvailable()) {
+      return Left(NetworkFailure(
+        message: 'Authentication services not available',
+        statusCode: null,
+      ));
+    }
+
     try {
       authState.value = const AuthState.loading();
+
+      // Sign out first to ensure clean state
+      await _googleSignIn.signOut();
 
       // Trigger Google Sign In
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
@@ -210,6 +295,10 @@ class AuthService extends GetxService {
 
       // Get Google Auth details
       final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+
+      if (googleAuth.accessToken == null || googleAuth.idToken == null) {
+        throw Exception('Failed to get Google authentication tokens');
+      }
 
       // Create Firebase credential
       final credential = fb.GoogleAuthProvider.credential(
@@ -241,6 +330,17 @@ class AuthService extends GetxService {
       final error = 'Google sign in error: $e';
       Logger.error(error);
       authState.value = AuthState.error(error);
+
+      // Clean up on error
+      try {
+        await _googleSignIn.signOut();
+        if (_firebaseAvailable) {
+          await _firebaseAuth?.signOut();
+        }
+      } catch (cleanupError) {
+        Logger.error('Error during Google sign in cleanup: $cleanupError');
+      }
+
       return Left(NetworkFailure(
         message: error,
         statusCode: null,
@@ -250,12 +350,30 @@ class AuthService extends GetxService {
 
   /// Apple Sign In
   Future<Either<NetworkFailure, User>> signInWithApple() async {
-    if (!_firebaseAvailable) {
-      const error = 'Firebase not available - cannot use Apple Sign In';
+    // Check platform support
+    if (!Platform.isIOS) {
+      const error = 'Apple Sign In is only available on iOS';
       Logger.error(error);
       authState.value = const AuthState.error(error);
       return Left(NetworkFailure(
         message: error,
+        statusCode: null,
+      ));
+    }
+
+    if (!_firebaseAvailable) {
+      const error = 'Apple Sign In requires Firebase';
+      Logger.error(error);
+      authState.value = const AuthState.error(error);
+      return Left(NetworkFailure(
+        message: error,
+        statusCode: null,
+      ));
+    }
+
+    if (!_ensureServicesAvailable()) {
+      return Left(NetworkFailure(
+        message: 'Authentication services not available',
         statusCode: null,
       ));
     }
@@ -280,6 +398,10 @@ class AuthService extends GetxService {
           AppleIDAuthorizationScopes.fullName,
         ],
       );
+
+      if (credential.identityToken == null) {
+        throw Exception('Failed to get Apple identity token');
+      }
 
       // Create Firebase credential
       final oauthCredential = fb.OAuthProvider("apple.com").credential(
@@ -326,36 +448,62 @@ class AuthService extends GetxService {
 
   /// Process social authentication
   Future<Either<NetworkFailure, User>> _processSocialAuth(SocialAuthRequest request) async {
-    final result = await _networkService.post<Map<String, dynamic>>(
-      '/auth/social',
-      data: request.toJson(),
-    );
+    try {
+      final result = await _networkService!.post<Map<String, dynamic>>(
+        '/auth/social',
+        data: request.toJson(),
+      );
 
-    return result.fold(
-          (failure) {
-        authState.value = AuthState.error(failure.message ?? 'Social auth failed');
-        return Left(failure);
-      },
-          (data) async {
-        final response = AuthResponse.fromJson(data);
-        await _tokenService.saveToken(response.accessToken);
-        if (response.refreshToken != null) {
-          await _tokenService.saveRefreshToken(response.refreshToken!);
-        }
+      return result.fold(
+            (failure) {
+          authState.value = AuthState.error(failure.message ?? 'Social auth failed');
+          return Left(failure);
+        },
+            (data) async {
+          try {
+            final response = AuthResponse.fromJson(data);
+            await _tokenService!.saveToken(response.accessToken);
+            if (response.refreshToken != null) {
+              await _tokenService!.saveRefreshToken(response.refreshToken!);
+            }
 
-        currentUser.value = response.user;
-        authState.value = AuthState.authenticated(response.user);
+            currentUser.value = response.user;
+            authState.value = AuthState.authenticated(response.user);
 
-        Logger.success('Social auth successful');
-        return Right(response.user);
-      },
-    );
+            Logger.success('Social auth successful');
+            return Right(response.user);
+          } catch (e) {
+            Logger.error('Social auth response parsing failed: $e');
+            authState.value = AuthState.error('Social auth response invalid');
+            return Left(NetworkFailure(
+              message: 'Invalid social auth response',
+              statusCode: null,
+            ));
+          }
+        },
+      );
+    } catch (e) {
+      final error = 'Social auth processing error: $e';
+      Logger.error(error);
+      authState.value = AuthState.error(error);
+      return Left(NetworkFailure(
+        message: error,
+        statusCode: null,
+      ));
+    }
   }
 
   /// Password Reset
   Future<Either<NetworkFailure, bool>> resetPassword(ResetPasswordRequest request) async {
     try {
-      final result = await _networkService.post<Map<String, dynamic>>(
+      if (!_ensureServicesAvailable()) {
+        return Left(NetworkFailure(
+          message: 'Authentication services not available',
+          statusCode: null,
+        ));
+      }
+
+      final result = await _networkService!.post<Map<String, dynamic>>(
         '/auth/reset-password',
         data: request.toJson(),
       );
@@ -377,35 +525,17 @@ class AuthService extends GetxService {
     }
   }
 
-  /// Change Password
-  Future<Either<NetworkFailure, bool>> changePassword(ChangePasswordRequest request) async {
-    try {
-      final result = await _networkService.post<Map<String, dynamic>>(
-        '/auth/change-password',
-        data: request.toJson(),
-      );
-
-      return result.fold(
-            (failure) => Left(failure),
-            (data) {
-          Logger.success('Password changed successfully');
-          return const Right(true);
-        },
-      );
-    } catch (e) {
-      final error = 'Change password error: $e';
-      Logger.error(error);
-      return Left(NetworkFailure(
-        message: error,
-        statusCode: null,
-      ));
-    }
-  }
-
   /// Verify Email
   Future<Either<NetworkFailure, bool>> verifyEmail(VerifyEmailRequest request) async {
     try {
-      final result = await _networkService.post<Map<String, dynamic>>(
+      if (!_ensureServicesAvailable()) {
+        return Left(NetworkFailure(
+          message: 'Authentication services not available',
+          statusCode: null,
+        ));
+      }
+
+      final result = await _networkService!.post<Map<String, dynamic>>(
         '/auth/verify-email',
         data: request.toJson(),
       );
@@ -436,7 +566,14 @@ class AuthService extends GetxService {
   /// Resend Verification Email
   Future<Either<NetworkFailure, bool>> resendVerificationEmail() async {
     try {
-      final result = await _networkService.post<Map<String, dynamic>>(
+      if (!_ensureServicesAvailable()) {
+        return Left(NetworkFailure(
+          message: 'Authentication services not available',
+          statusCode: null,
+        ));
+      }
+
+      final result = await _networkService!.post<Map<String, dynamic>>(
         '/auth/resend-verification',
         data: {},
       );
@@ -461,50 +598,34 @@ class AuthService extends GetxService {
   /// Get Current User
   Future<Either<NetworkFailure, User>> _getCurrentUser() async {
     try {
-      final result = await _networkService.get<Map<String, dynamic>>(
+      if (!_ensureServicesAvailable()) {
+        return Left(NetworkFailure(
+          message: 'Authentication services not available',
+          statusCode: null,
+        ));
+      }
+
+      final result = await _networkService!.get<Map<String, dynamic>>(
         '/auth/me',
       );
 
       return result.fold(
             (failure) => Left(failure),
             (data) {
-          final user = User.fromJson(data);
-          return Right(user);
+          try {
+            final user = User.fromJson(data);
+            return Right(user);
+          } catch (e) {
+            Logger.error('User data parsing failed: $e');
+            return Left(NetworkFailure(
+              message: 'Invalid user data received',
+              statusCode: null,
+            ));
+          }
         },
       );
     } catch (e) {
       final error = 'Get current user error: $e';
-      Logger.error(error);
-      return Left(NetworkFailure(
-        message: error,
-        statusCode: null,
-      ));
-    }
-  }
-
-  /// Refresh Token
-  Future<Either<NetworkFailure, bool>> refreshToken() async {
-    try {
-      final result = await _networkService.post<Map<String, dynamic>>(
-        '/auth/refresh',
-        data: {},
-      );
-
-      return result.fold(
-            (failure) => Left(failure),
-            (data) async {
-          final response = AuthResponse.fromJson(data);
-          await _tokenService.saveToken(response.accessToken);
-          if (response.refreshToken != null) {
-            await _tokenService.saveRefreshToken(response.refreshToken!);
-          }
-
-          Logger.success('Token refreshed successfully');
-          return const Right(true);
-        },
-      );
-    } catch (e) {
-      final error = 'Token refresh error: $e';
       Logger.error(error);
       return Left(NetworkFailure(
         message: error,
@@ -518,21 +639,35 @@ class AuthService extends GetxService {
     try {
       authState.value = const AuthState.loading();
 
-      // Call logout endpoint
-      await _networkService.post('/auth/logout', data: {});
+      // Call logout endpoint (don't fail if this fails)
+      if (_ensureServicesAvailable()) {
+        try {
+          await _networkService!.post('/auth/logout', data: {});
+        } catch (e) {
+          Logger.warning('Server logout failed (continuing with local logout): $e');
+        }
+      }
 
       // Sign out from Google if signed in
-      if (await _googleSignIn.isSignedIn()) {
-        await _googleSignIn.signOut();
+      try {
+        if (await _googleSignIn.isSignedIn()) {
+          await _googleSignIn.signOut();
+        }
+      } catch (e) {
+        Logger.warning('Google sign out failed: $e');
       }
 
       // Sign out from Firebase if available
-      if (_firebaseAvailable && _firebaseAuth != null) {
-        await _firebaseAuth!.signOut();
+      try {
+        if (_firebaseAvailable && _firebaseAuth != null) {
+          await _firebaseAuth!.signOut();
+        }
+      } catch (e) {
+        Logger.warning('Firebase sign out failed: $e');
       }
 
       // Clear local data
-      await _tokenService.clearToken();
+      await _tokenService?.clearToken();
       currentUser.value = null;
       authState.value = const AuthState.unauthenticated();
 
@@ -540,7 +675,7 @@ class AuthService extends GetxService {
     } catch (e) {
       Logger.error('Logout error: $e');
       // Even if logout fails, clear local data
-      await _tokenService.clearToken();
+      await _tokenService?.clearToken();
       currentUser.value = null;
       authState.value = const AuthState.unauthenticated();
     }
@@ -551,63 +686,27 @@ class AuthService extends GetxService {
   bool get isLoading => authState.value is AuthLoading;
   bool get hasError => authState.value is AuthError;
   bool get isFirebaseAvailable => _firebaseAvailable;
+  bool get isInitialized => _isInitialized;
 
   String? get errorMessage {
     final state = authState.value;
     return state is AuthError ? state.message : null;
   }
 
-  /// Update User Profile
-  Future<Either<NetworkFailure, User>> updateProfile(Map<String, dynamic> data) async {
-    try {
-      final result = await _networkService.put<Map<String, dynamic>>(
-        '/auth/profile',
-        data: data,
-      );
+  /// Wait for initialization to complete
+  Future<void> waitForInitialization() async {
+    if (_isInitialized) return;
 
-      return result.fold(
-            (failure) => Left(failure),
-            (responseData) {
-          final updatedUser = User.fromJson(responseData);
-          currentUser.value = updatedUser;
-          authState.value = AuthState.authenticated(updatedUser);
+    int attempts = 0;
+    const maxAttempts = 20; // 10 seconds max
 
-          Logger.success('Profile updated successfully');
-          return Right(updatedUser);
-        },
-      );
-    } catch (e) {
-      final error = 'Update profile error: $e';
-      Logger.error(error);
-      return Left(NetworkFailure(
-        message: error,
-        statusCode: null,
-      ));
+    while (!_isInitialized && attempts < maxAttempts) {
+      await Future.delayed(const Duration(milliseconds: 500));
+      attempts++;
     }
-  }
 
-  /// Delete Account
-  Future<Either<NetworkFailure, bool>> deleteAccount() async {
-    try {
-      final result = await _networkService.delete<Map<String, dynamic>>(
-        '/auth/account',
-      );
-
-      return result.fold(
-            (failure) => Left(failure),
-            (data) async {
-          await logout(); // Clear all local data
-          Logger.success('Account deleted successfully');
-          return const Right(true);
-        },
-      );
-    } catch (e) {
-      final error = 'Delete account error: $e';
-      Logger.error(error);
-      return Left(NetworkFailure(
-        message: error,
-        statusCode: null,
-      ));
+    if (!_isInitialized) {
+      Logger.warning('AuthService initialization timeout');
     }
   }
 }

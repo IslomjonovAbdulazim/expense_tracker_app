@@ -19,36 +19,81 @@ class AuthPage extends GetView<AuthController> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            children: [
-              const SizedBox(height: 40),
+        child: Obx(() {
+          // Show loading indicator while service is initializing
+          if (!controller.isServiceReady.value) {
+            return _buildServiceLoadingScreen(context);
+          }
 
-              // Logo and branding
-              _buildHeader(context),
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              children: [
+                const SizedBox(height: 40),
 
-              const SizedBox(height: 48),
+                // Logo and branding
+                _buildHeader(context),
 
-              // Auth form
-              Obx(() => controller.isLoginMode.value
-                  ? _buildLoginForm(context)
-                  : _buildRegisterForm(context)),
+                const SizedBox(height: 48),
 
-              const SizedBox(height: 32),
+                // Auth form
+                Obx(() => controller.isLoginMode.value
+                    ? _buildLoginForm(context)
+                    : _buildRegisterForm(context)),
 
-              // Social auth buttons
-              _buildSocialAuthSection(context),
+                const SizedBox(height: 32),
 
-              const SizedBox(height: 32),
+                // Social auth buttons
+                _buildSocialAuthSection(context),
 
-              // Toggle auth mode
-              _buildToggleSection(context),
+                const SizedBox(height: 32),
 
-              const SizedBox(height: 20),
-            ],
+                // Toggle auth mode
+                _buildToggleSection(context),
+
+                const SizedBox(height: 20),
+              ],
+            ),
+          );
+        }),
+      ),
+    );
+  }
+
+  Widget _buildServiceLoadingScreen(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const AdaptiveLogo(
+            width: 80,
+            height: 80,
           ),
-        ),
+          const SizedBox(height: 32),
+          CircularProgressIndicator(
+            color: context.primary,
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'Initializing authentication...',
+            style: context.bodyMedium.copyWith(
+              color: context.textSecondary,
+            ),
+          ),
+          const SizedBox(height: 32),
+          TextButton(
+            onPressed: () {
+              // Force refresh or navigate away
+              Get.offAllNamed('/home');
+            },
+            child: Text(
+              'Skip for now',
+              style: context.bodySmall.copyWith(
+                color: context.textSecondary,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -99,13 +144,13 @@ class AuthPage extends GetView<AuthController> {
           ),
 
           FormFieldWrapper(
-            child: Obx(() => PasswordTextField(
+            child: PasswordTextField(
               controller: controller.passwordController,
               focusNode: controller.passwordFocusNode,
               validator: controller.validatePassword,
               onChanged: (value) {},
               textInputAction: TextInputAction.done,
-            )),
+            ),
           ),
 
           // Forgot password link
@@ -241,57 +286,83 @@ class AuthPage extends GetView<AuthController> {
   }
 
   Widget _buildSocialAuthSection(BuildContext context) {
-    return Column(
-      children: [
-        // Divider with "OR" text
-        Row(
-          children: [
-            Expanded(child: Divider(color: context.dividerColor)),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Text(
-                'OR',
-                style: context.bodySmall.copyWith(
-                  color: context.textSecondary,
-                  fontWeight: FontWeight.w600,
+    return Obx(() {
+      // Disable social auth if service is not ready
+      final isDisabled = !controller.isServiceReady.value || controller.isLoading.value;
+
+      return Column(
+        children: [
+          // Divider with "OR" text
+          Row(
+            children: [
+              Expanded(child: Divider(color: context.dividerColor)),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Text(
+                  'OR',
+                  style: context.bodySmall.copyWith(
+                    color: context.textSecondary,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
-            ),
-            Expanded(child: Divider(color: context.dividerColor)),
-          ],
-        ),
+              Expanded(child: Divider(color: context.dividerColor)),
+            ],
+          ),
 
-        const SizedBox(height: 24),
+          const SizedBox(height: 24),
 
-        // Social auth buttons
-        Column(
-          children: [
-            // Google Sign In
-            Obx(() => PlatformButton.secondary(
-              text: '${controller.socialButtonPrefix} with Google',
-              icon: _buildGoogleIcon(),
-              onPressed: controller.isLoading.value ? null : controller.signInWithGoogle,
-              expanded: true,
-              height: 56,
-            )),
+          // Social auth buttons
+          Column(
+            children: [
+              // Google Sign In
+              PlatformButton.secondary(
+                text: '${controller.socialButtonPrefix} with Google',
+                icon: _buildGoogleIcon(),
+                onPressed: isDisabled ? null : controller.signInWithGoogle,
+                expanded: true,
+                height: 56,
+              ),
 
-            const SizedBox(height: 12),
+              const SizedBox(height: 12),
 
-            // Apple Sign In (iOS only) - Fixed implementation
-            if (Platform.isIOS)
-              Obx(() => _buildAppleSignInButton(context)),
-          ],
-        ),
-      ],
-    );
+              // Apple Sign In (iOS only)
+              if (Platform.isIOS)
+                _buildAppleSignInButton(context, isDisabled),
+            ],
+          ),
+        ],
+      );
+    });
   }
 
-  Widget _buildAppleSignInButton(BuildContext context) {
+  Widget _buildAppleSignInButton(BuildContext context, bool isDisabled) {
+    if (isDisabled) {
+      // Show disabled Apple button
+      return Container(
+        width: double.infinity,
+        height: 56,
+        decoration: BoxDecoration(
+          color: Colors.grey.withOpacity(0.3),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.grey.withOpacity(0.5)),
+        ),
+        child: Center(
+          child: Text(
+            '${controller.socialButtonPrefix} with Apple',
+            style: context.bodyMedium.copyWith(
+              color: Colors.grey,
+            ),
+          ),
+        ),
+      );
+    }
+
     return Container(
       width: double.infinity,
       height: 56,
       child: SignInWithAppleButton(
-        onPressed: controller.isLoading.value ? null : controller.signInWithApple,
+        onPressed: controller.signInWithApple,
         style: Get.isDarkMode
             ? SignInWithAppleButtonStyle.white
             : SignInWithAppleButtonStyle.black,
@@ -302,7 +373,7 @@ class AuthPage extends GetView<AuthController> {
   }
 
   Widget _buildGoogleIcon() {
-    // Create a simple Google icon using Container since you might not have the asset
+    // Create a simple Google icon using Container
     return Container(
       width: 20,
       height: 20,
