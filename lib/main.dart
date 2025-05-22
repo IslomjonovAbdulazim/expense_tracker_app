@@ -1,21 +1,20 @@
 // lib/main.dart
 import 'package:device_preview/device_preview.dart';
 import 'package:expense_tracker_app/routes/app_pages.dart';
+import 'package:expense_tracker_app/routes/app_routes.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_easy_dialogs/flutter_easy_dialogs.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
-import 'package:expense_tracker_app/routes/app_routes.dart';
 
 import 'core/di/service_locator.dart';
 import 'core/translations/app_translations.dart';
 import 'core/translations/language_controller.dart';
-import 'utils/themes/app_theme.dart';
-import 'utils/services/theme_service.dart';
-import 'utils/helpers/logger.dart';
 import 'utils/helpers/app_diagnostics.dart';
+import 'utils/helpers/logger.dart';
+import 'utils/services/theme_service.dart';
+import 'utils/themes/app_theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -51,7 +50,6 @@ void main() async {
         builder: (context) => const MyApp(),
       ),
     );
-
   } catch (e, stackTrace) {
     Logger.error('❌ App initialization failed: $e');
     Logger.error('Stack trace: $stackTrace');
@@ -109,12 +107,13 @@ Future<void> _initializeCoreDependencies() async {
     Logger.log('🎨 Initializing ThemeController...');
     // Initialize core controllers
     Get.put(ThemeController(), permanent: true);
-    Logger.log('✅ ThemeController registered: ${Get.isRegistered<ThemeController>()}');
+    Logger.log(
+        '✅ ThemeController registered: ${Get.isRegistered<ThemeController>()}');
 
     Logger.log('🌐 Initializing LanguageController...');
     Get.put(LanguageController(), permanent: true);
-    Logger.log('✅ LanguageController registered: ${Get.isRegistered<LanguageController>()}');
-
+    Logger.log(
+        '✅ LanguageController registered: ${Get.isRegistered<LanguageController>()}');
   } catch (e) {
     Logger.error('Core dependencies initialization failed: $e');
     rethrow;
@@ -134,26 +133,34 @@ Future<void> _debugInitialization() async {
     Logger.log('📦 GetStorage working: ${test == 'ok'}');
 
     // Check if controllers are properly registered
-    Logger.log('🎮 ThemeController registered: ${Get.isRegistered<ThemeController>()}');
-    Logger.log('🌐 LanguageController registered: ${Get.isRegistered<LanguageController>()}');
+    Logger.log(
+        '🎮 ThemeController registered: ${Get.isRegistered<ThemeController>()}');
+    Logger.log(
+        '🌐 LanguageController registered: ${Get.isRegistered<LanguageController>()}');
 
     // Test controller functionality
     if (Get.isRegistered<ThemeController>()) {
       final themeController = Get.find<ThemeController>();
-      Logger.log('🎨 ThemeController mode: ${themeController.currentThemeName}');
+      Logger.log(
+          '🎨 ThemeController mode: ${themeController.currentThemeName}');
     }
 
     if (Get.isRegistered<LanguageController>()) {
       final languageController = Get.find<LanguageController>();
-      Logger.log('🗣️ LanguageController locale: ${languageController.currentLanguage}');
+      Logger.log(
+          '🗣️ LanguageController locale: ${languageController.currentLanguage}');
     }
 
     // Check routes configuration
     Logger.log('🛣️ Total routes defined: ${AppPages.routes.length}');
-    Logger.log('🛣️ Splash route exists: ${AppPages.routes.any((r) => r.name == AppRoutes.splash)}');
-    Logger.log('🛣️ Home route exists: ${AppPages.routes.any((r) => r.name == AppRoutes.home)}');
-    Logger.log('🛣️ Onboarding route exists: ${AppPages.routes.any((r) => r.name == AppRoutes.onboarding)}');
-    Logger.log('🛣️ Pin code route exists: ${AppPages.routes.any((r) => r.name == AppRoutes.pinCode)}');
+    Logger.log(
+        '🛣️ Splash route exists: ${AppPages.routes.any((r) => r.name == AppRoutes.splash)}');
+    Logger.log(
+        '🛣️ Home route exists: ${AppPages.routes.any((r) => r.name == AppRoutes.home)}');
+    Logger.log(
+        '🛣️ Onboarding route exists: ${AppPages.routes.any((r) => r.name == AppRoutes.onboarding)}');
+    Logger.log(
+        '🛣️ Pin code route exists: ${AppPages.routes.any((r) => r.name == AppRoutes.pinCode)}');
 
     // Check GetX state
     Logger.log('🧭 GetX context available: ${Get.context != null}');
@@ -162,7 +169,6 @@ Future<void> _debugInitialization() async {
 
     // Run quick diagnostics
     await AppDiagnostics.printQuickDiagnostics();
-
   } catch (e) {
     Logger.error('❌ Debug initialization check failed: $e');
   }
@@ -182,8 +188,10 @@ class MyApp extends StatelessWidget {
       builder: (themeController) {
         return GetBuilder<LanguageController>(
           builder: (languageController) {
-            Logger.log('🎨 Building app with theme: ${themeController.currentThemeName}');
-            Logger.log('🗣️ Building app with locale: ${languageController.currentLanguage}');
+            Logger.log(
+                '🎨 Building app with theme: ${themeController.currentThemeName}');
+            Logger.log(
+                '🗣️ Building app with locale: ${languageController.currentLanguage}');
 
             return GetMaterialApp(
               title: 'Money Track',
@@ -206,8 +214,10 @@ class MyApp extends StatelessWidget {
 
               builder: (context, child) {
                 // Listen to system theme changes and update accordingly
-                final systemBrightness = MediaQuery.of(context).platformBrightness;
-                if (themeController.selectedTheme.value == AppThemeEnum.system) {
+                final systemBrightness =
+                    MediaQuery.of(context).platformBrightness;
+                if (themeController.selectedTheme.value ==
+                    AppThemeEnum.system) {
                   WidgetsBinding.instance.addPostFrameCallback((_) {
                     final newThemeMode = systemBrightness == Brightness.dark
                         ? ThemeMode.dark
@@ -225,11 +235,12 @@ class MyApp extends StatelessWidget {
                   ),
                   child: ScrollConfiguration(
                     behavior: const ScrollBehavior(),
-                    child: child ?? const Scaffold(
-                      body: Center(
-                        child: Text('App Loading...'),
-                      ),
-                    ),
+                    child: child ??
+                        const Scaffold(
+                          body: Center(
+                            child: Text('App Loading...'),
+                          ),
+                        ),
                   ),
                 );
               },
@@ -264,7 +275,8 @@ class MyApp extends StatelessWidget {
                           const SizedBox(height: 8),
                           Text(
                             'Current route: ${Get.currentRoute}',
-                            style: const TextStyle(fontSize: 12, color: Colors.grey),
+                            style: const TextStyle(
+                                fontSize: 12, color: Colors.grey),
                           ),
                         ],
                       ],
