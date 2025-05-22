@@ -7,11 +7,11 @@ import '../features/auth/page/auth_page.dart';
 import '../features/auth/page/email_verification_page.dart';
 import '../features/auth/page/forgot_password_page.dart';
 import '../features/home/imports.dart';
-import '../features/screens/language/imports.dart';
 import '../features/screens/oboarding/imports.dart';
 import '../features/screens/offline/imports.dart';
 import '../features/screens/pin_code/imports.dart';
 import '../features/screens/splash/imports.dart';
+import '../features/setup/currency_setup/imports.dart';
 import '../features/setup/language_setup/imports.dart';
 import '../features/setup/theme_setup/imports.dart';
 import 'app_routes.dart';
@@ -187,16 +187,6 @@ class AppPages {
       page: () => const HomePage(), // Replace with actual settings page
       binding: HomeBinding(),
       middlewares: [AuthMiddleware()],
-      transition: Transition.rightToLeft,
-      transitionDuration: const Duration(milliseconds: 300),
-      curve: Curves.easeInOut,
-    ),
-
-    // Language Settings - Slide from right (settings style)
-    GetPage(
-      name: AppRoutes.language,
-      page: () => const LanguagePage(),
-      binding: LanguageBinding(),
       transition: Transition.rightToLeft,
       transitionDuration: const Duration(milliseconds: 300),
       curve: Curves.easeInOut,

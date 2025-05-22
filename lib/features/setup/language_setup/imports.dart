@@ -9,7 +9,9 @@ import '../../../core/translations/language_controller.dart';
 import '../../../core/translations/translation_keys.dart';
 import '../../../routes/app_routes.dart';
 import '../../../shared/widgets/platform_buttons.dart';
+import '../../../shared/widgets/setup_progress_indicator.dart';
 import '../../../utils/helpers/logger.dart';
+import '../../../utils/helpers/navigation_helper.dart';
 
 part 'binding.dart';
 part 'controller.dart';

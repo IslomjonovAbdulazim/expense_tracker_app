@@ -1,3 +1,6 @@
+// Enhanced theme setup controller
+// lib/features/setup/theme_setup/controller.dart
+
 part of 'imports.dart';
 
 class ThemeSetupController extends GetxController {
@@ -20,6 +23,8 @@ class ThemeSetupController extends GetxController {
 
   void selectTheme(AppThemeEnum theme) {
     selectedTheme.value = theme;
+    // Apply theme immediately for preview
+    _themeController.updateTheme(theme);
   }
 
   Future<void> confirmSelection() async {
@@ -27,9 +32,11 @@ class ThemeSetupController extends GetxController {
 
     try {
       isLoading.value = true;
+
+      // Theme is already applied from selectTheme, just save it
       await _themeController.updateTheme(selectedTheme.value!);
 
-      Logger.success('Theme changed to: ${selectedTheme.value}');
+      Logger.success('Theme confirmed: ${selectedTheme.value}');
 
       if (isFromSettings.value) {
         Get.back();
@@ -41,10 +48,18 @@ class ThemeSetupController extends GetxController {
           colorText: Get.theme.colorScheme.primary,
         );
       } else {
-        Get.offNamed(AppRoutes.currencySetup);
+        // Continue to next step in setup flow
+        await SetupNavigationHelper.navigateToNextSetupStep(AppRoutes.themeSetup);
       }
     } catch (e) {
       Logger.error('Failed to change theme: $e');
+      Get.snackbar(
+        'Error',
+        'Failed to update theme. Please try again.',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Get.theme.colorScheme.error.withOpacity(0.1),
+        colorText: Get.theme.colorScheme.error,
+      );
     } finally {
       isLoading.value = false;
     }
@@ -54,7 +69,7 @@ class ThemeSetupController extends GetxController {
     if (isFromSettings.value) {
       Get.back();
     } else {
-      Get.offNamed(AppRoutes.currencySetup);
+      SetupNavigationHelper.skipCurrentStep(AppRoutes.themeSetup);
     }
   }
 
@@ -69,7 +84,7 @@ class ThemeSetupController extends GetxController {
       case AppThemeEnum.dark:
         return 'Easy on the eyes, ideal for low-light environments';
       case AppThemeEnum.system:
-        return 'Automatically switches between light and dark based on your device settings';
+        return 'Automatically switches based on your device settings';
     }
   }
 
@@ -94,4 +109,24 @@ class ThemeSetupController extends GetxController {
         return 'System Default';
     }
   }
+
+  // Get progress information for UI
+  double get setupProgress => SetupNavigationHelper.getSetupProgress(AppRoutes.themeSetup);
+  int get currentStep => SetupNavigationHelper.getStepNumber(AppRoutes.themeSetup);
+  int get totalSteps => SetupNavigationHelper.totalSteps;
+  List<String> get stepLabels => SetupNavigationHelper.stepLabels;
+
+  // Get recommended theme based on current system settings
+  AppThemeEnum get recommendedTheme {
+    final context = Get.context;
+    if (context != null) {
+      final brightness = MediaQuery.of(context).platformBrightness;
+      // Recommend system theme for best user experience
+      return AppThemeEnum.system;
+    }
+    return AppThemeEnum.light; // Fallback
+  }
+
+  // Check if current selection is recommended
+  bool get isRecommendedSelected => selectedTheme.value == recommendedTheme;
 }

@@ -254,9 +254,6 @@ class SplashController extends GetxController {
     Logger.success('SplashController: Initialization completed successfully');
   }
 
-  // Updated navigation logic for lib/features/screens/splash/controller.dart
-// Replace the _navigateToNextScreen method with this:
-
   Future<void> _navigateToNextScreen() async {
     if (_isDisposed) return;
 
@@ -266,74 +263,93 @@ class SplashController extends GetxController {
 
     try {
       final storage = GetStorage();
-      // storage.erase();
+      // storage.erase(); // todo
 
-      // Check onboarding status
+      // Check if this is a fresh install or reset
+      final hasCompletedPreferences = storage.read(StorageKeys.hasCompletedPreferences) ?? false;
       final hasCompletedOnboarding = storage.read(StorageKeys.hasCompletedOnboarding) ?? false;
+
+      Logger.log('SplashController: Has completed preferences: $hasCompletedPreferences');
       Logger.log('SplashController: Has completed onboarding: $hasCompletedOnboarding');
 
-      if (!hasCompletedOnboarding) {
-        Logger.log('SplashController: Navigating to onboarding');
+      // 1. Fresh install - start with language setup
+      if (!hasCompletedPreferences && !hasCompletedOnboarding) {
+        Logger.log('SplashController: Fresh install - navigating to language setup');
+        Get.offAllNamed(AppRoutes.languageSetup);
+        return;
+      }
+
+      // 2. Preferences completed but not onboarding - go to visual onboarding
+      if (hasCompletedPreferences && !hasCompletedOnboarding) {
+        Logger.log('SplashController: Navigating to visual onboarding');
         Get.offAllNamed(AppRoutes.onboarding);
         return;
       }
 
-      // Check PIN requirement
-      final isPinProtected = storage.read(StorageKeys.pinProtected) ?? false;
-      Logger.log('SplashController: Is PIN protected: $isPinProtected');
+      // 3. Both completed - check PIN and auth status
+      if (hasCompletedOnboarding) {
+        // Check PIN requirement
+        final isPinProtected = storage.read(StorageKeys.pinProtected) ?? false;
+        Logger.log('SplashController: Is PIN protected: $isPinProtected');
 
-      if (isPinProtected) {
-        Logger.log('SplashController: Navigating to PIN entry');
-        Get.offAllNamed(AppRoutes.pinCode);
+        if (isPinProtected) {
+          Logger.log('SplashController: Navigating to PIN entry');
+          Get.offAllNamed(AppRoutes.pinCode);
+          return;
+        }
+
+        // Check authentication status
+        bool hasToken = false;
+        bool isAuthenticated = false;
+
+        try {
+          if (Get.isRegistered<TokenService>()) {
+            hasToken = TokenService.to.hasToken;
+          }
+
+          if (Get.isRegistered<AuthService>()) {
+            isAuthenticated = AuthService.to.isAuthenticated;
+          }
+        } catch (e) {
+          Logger.warning('SplashController: Error checking auth status: $e');
+        }
+
+        Logger.log('SplashController: Has auth token: $hasToken');
+        Logger.log('SplashController: Is authenticated: $isAuthenticated');
+
+        // Navigate based on authentication status
+        if (isAuthenticated) {
+          // Check if email verification is needed
+          try {
+            final user = Get.isRegistered<AuthService>() ? AuthService.to.currentUser.value : null;
+            if (user != null && !user.isEmailVerified) {
+              Logger.log('SplashController: Navigating to email verification');
+              Get.offAllNamed(AppRoutes.emailVerification);
+              return;
+            }
+          } catch (e) {
+            Logger.warning('SplashController: Error checking email verification: $e');
+          }
+
+          Logger.log('SplashController: Navigating to home (authenticated)');
+          Get.offAllNamed(AppRoutes.home);
+        } else {
+          Logger.log('SplashController: Navigating to auth (not authenticated)');
+          Get.offAllNamed(AppRoutes.auth);
+        }
         return;
       }
 
-      // Check authentication - with null safety
-      bool hasToken = false;
-      bool isAuthenticated = false;
-
-      try {
-        if (Get.isRegistered<TokenService>()) {
-          hasToken = TokenService.to.hasToken;
-        }
-
-        if (Get.isRegistered<AuthService>()) {
-          isAuthenticated = AuthService.to.isAuthenticated;
-        }
-      } catch (e) {
-        Logger.warning('SplashController: Error checking auth status: $e');
-      }
-
-      Logger.log('SplashController: Has auth token: $hasToken');
-      Logger.log('SplashController: Is authenticated: $isAuthenticated');
-
-      // Navigate based on authentication status
-      if (isAuthenticated) {
-        // Check if email verification is needed
-        try {
-          final user = Get.isRegistered<AuthService>() ? AuthService.to.currentUser.value : null;
-          if (user != null && !user.isEmailVerified) {
-            Logger.log('SplashController: Navigating to email verification');
-            Get.offAllNamed(AppRoutes.emailVerification);
-            return;
-          }
-        } catch (e) {
-          Logger.warning('SplashController: Error checking email verification: $e');
-        }
-
-        Logger.log('SplashController: Navigating to home (authenticated)');
-        Get.offAllNamed(AppRoutes.home);
-      } else {
-        Logger.log('SplashController: Navigating to auth (not authenticated)');
-        Get.offAllNamed(AppRoutes.auth);
-      }
+      // Fallback navigation
+      Logger.warning('SplashController: Unexpected state - defaulting to language setup');
+      Get.offAllNamed(AppRoutes.languageSetup);
 
     } catch (e) {
       Logger.error('SplashController: Navigation error: $e');
       if (!_isDisposed) {
-        // Fallback navigation to auth
-        Logger.warning('SplashController: Using fallback navigation to auth');
-        Get.offAllNamed(AppRoutes.auth);
+        // Fallback navigation to language setup for fresh start
+        Logger.warning('SplashController: Using fallback navigation to language setup');
+        Get.offAllNamed(AppRoutes.languageSetup);
       }
     }
   }

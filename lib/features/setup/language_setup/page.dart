@@ -1,3 +1,6 @@
+// Enhanced language setup page with progress indicator
+// lib/features/setup/language_setup/page.dart
+
 part of 'imports.dart';
 
 class LanguageSetupPage extends GetView<LanguageSetupController> {
@@ -11,6 +14,11 @@ class LanguageSetupPage extends GetView<LanguageSetupController> {
           padding: const EdgeInsets.all(24.0),
           child: Column(
             children: [
+              // Progress indicator (only show if not from settings)
+              Obx(() => !controller.isFromSettings.value
+                  ? _buildProgressSection(context)
+                  : const SizedBox.shrink()),
+
               // Header
               _buildHeader(context),
 
@@ -32,6 +40,28 @@ class LanguageSetupPage extends GetView<LanguageSetupController> {
     );
   }
 
+  Widget _buildProgressSection(BuildContext context) {
+    return Column(
+      children: [
+        SetupProgressIndicator(
+          currentStep: controller.currentStep - 1, // 0-indexed for display
+          totalSteps: controller.totalSteps,
+          stepLabels: controller.stepLabels,
+          showLabels: true,
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Step ${controller.currentStep} of ${controller.totalSteps}',
+          style: context.bodySmall.copyWith(
+            color: context.textSecondary,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        const SizedBox(height: 24),
+      ],
+    );
+  }
+
   Widget _buildHeader(BuildContext context) {
     return Column(
       children: [
@@ -50,7 +80,9 @@ class LanguageSetupPage extends GetView<LanguageSetupController> {
         ),
         const SizedBox(height: 24),
         Text(
-          'Choose Your Language',
+          controller.isFromSettings.value
+              ? 'Change Language'
+              : 'Choose Your Language',
           style: context.headingLarge.copyWith(
             color: context.primary,
             fontWeight: FontWeight.bold,
@@ -59,7 +91,9 @@ class LanguageSetupPage extends GetView<LanguageSetupController> {
         ),
         const SizedBox(height: 8),
         Text(
-          'Select your preferred language for the app',
+          controller.isFromSettings.value
+              ? 'Update your preferred language'
+              : 'Select your preferred language for the app',
           style: context.bodyMedium.copyWith(
             color: context.textSecondary,
           ),
@@ -93,7 +127,11 @@ class LanguageSetupPage extends GetView<LanguageSetupController> {
       children: [
         // Continue button
         PlatformButton.primary(
-          text: controller.isFromSettings.value ? 'Update Language' : 'Continue',
+          text: controller.isFromSettings.value
+              ? 'Update Language'
+              : controller.selectedLocale.value != null
+              ? 'Continue to Theme'
+              : 'Select Language',
           onPressed: controller.selectedLocale.value != null
               ? controller.confirmSelection
               : null,
@@ -109,6 +147,18 @@ class LanguageSetupPage extends GetView<LanguageSetupController> {
           PlatformButton.text(
             text: 'Skip for now',
             onPressed: controller.skipLanguageSetup,
+          ),
+
+          const SizedBox(height: 8),
+
+          // Info text
+          Text(
+            'You can change this later in Settings',
+            style: context.bodySmall.copyWith(
+              color: context.textSecondary,
+              fontStyle: FontStyle.italic,
+            ),
+            textAlign: TextAlign.center,
           ),
         ],
       ],

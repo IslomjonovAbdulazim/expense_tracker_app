@@ -1,3 +1,6 @@
+// Updated language setup controller with better navigation
+// lib/features/setup/language_setup/controller.dart
+
 part of 'imports.dart';
 
 class LanguageSetupController extends GetxController {
@@ -49,11 +52,19 @@ class LanguageSetupController extends GetxController {
           colorText: Get.theme.colorScheme.primary,
         );
       } else {
-        // Continue to theme setup
-        Get.offNamed(AppRoutes.themeSetup);
+        // Continue to next step in setup flow
+        await SetupNavigationHelper.navigateToNextSetupStep(
+            AppRoutes.languageSetup);
       }
     } catch (e) {
       Logger.error('Failed to change language: $e');
+      Get.snackbar(
+        'Error',
+        'Failed to update language. Please try again.',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Get.theme.colorScheme.error.withOpacity(0.1),
+        colorText: Get.theme.colorScheme.error,
+      );
     } finally {
       isLoading.value = false;
     }
@@ -63,7 +74,7 @@ class LanguageSetupController extends GetxController {
     if (isFromSettings.value) {
       Get.back();
     } else {
-      Get.offNamed(AppRoutes.themeSetup);
+      SetupNavigationHelper.skipCurrentStep(AppRoutes.languageSetup);
     }
   }
 
@@ -71,4 +82,15 @@ class LanguageSetupController extends GetxController {
     return selectedLocale.value?.languageCode == locale.languageCode &&
         selectedLocale.value?.countryCode == locale.countryCode;
   }
+
+  // Get progress information for UI
+  double get setupProgress =>
+      SetupNavigationHelper.getSetupProgress(AppRoutes.languageSetup);
+
+  int get currentStep =>
+      SetupNavigationHelper.getStepNumber(AppRoutes.languageSetup);
+
+  int get totalSteps => SetupNavigationHelper.totalSteps;
+
+  List<String> get stepLabels => SetupNavigationHelper.stepLabels;
 }
