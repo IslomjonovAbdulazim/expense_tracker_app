@@ -277,33 +277,57 @@ class AuthPage extends GetView<AuthController> {
 
             const SizedBox(height: 12),
 
-            // Apple Sign In (iOS only)
+            // Apple Sign In (iOS only) - Fixed implementation
             if (Platform.isIOS)
-              Obx(() => SignInWithAppleButton(
-                text: controller.isLoginMode.value
-                    ? SignInWithAppleButtonText.signIn
-                    : SignInWithAppleButtonText.signUp,
-                height: 56,
-                style: Get.isDarkMode
-                    ? SignInWithAppleButtonStyle.white
-                    : SignInWithAppleButtonStyle.black,
-                borderRadius: BorderRadius.circular(12),
-                onPressed: controller.isLoading.value ? null : controller.signInWithApple,
-              )),
+              Obx(() => _buildAppleSignInButton(context)),
           ],
         ),
       ],
     );
   }
 
+  Widget _buildAppleSignInButton(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      height: 56,
+      child: SignInWithAppleButton(
+        onPressed: controller.isLoading.value ? null : controller.signInWithApple,
+        style: Get.isDarkMode
+            ? SignInWithAppleButtonStyle.white
+            : SignInWithAppleButtonStyle.black,
+        borderRadius: BorderRadius.circular(12),
+        text: controller.isLoginMode.value ? 'Sign in with Apple' : 'Sign up with Apple',
+      ),
+    );
+  }
+
   Widget _buildGoogleIcon() {
+    // Create a simple Google icon using Container since you might not have the asset
     return Container(
       width: 20,
       height: 20,
-      decoration: const BoxDecoration(
-        image: DecorationImage(
-          image: AssetImage('assets/icons/google.png'),
-          fit: BoxFit.contain,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        gradient: LinearGradient(
+          colors: [
+            Colors.red,
+            Colors.orange,
+            Colors.yellow,
+            Colors.green,
+            Colors.blue,
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+      ),
+      child: Center(
+        child: Text(
+          'G',
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+            fontSize: 12,
+          ),
         ),
       ),
     );

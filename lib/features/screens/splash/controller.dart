@@ -254,6 +254,9 @@ class SplashController extends GetxController {
     Logger.success('SplashController: Initialization completed successfully');
   }
 
+  // Updated navigation logic for lib/features/screens/splash/controller.dart
+// Replace the _navigateToNextScreen method with this:
+
   Future<void> _navigateToNextScreen() async {
     if (_isDisposed) return;
 
@@ -284,22 +287,52 @@ class SplashController extends GetxController {
         return;
       }
 
-      // Check authentication
-      final hasToken = Get.isRegistered<TokenService>() ?
-      TokenService.to.hasToken : false;
-      Logger.log('SplashController: Has auth token: $hasToken');
+      // Check authentication - with null safety
+      bool hasToken = false;
+      bool isAuthenticated = false;
 
-      // Navigate to main app
-      final targetRoute = hasToken ? AppRoutes.admin : AppRoutes.home;
-      Logger.log('SplashController: Navigating to: $targetRoute');
-      Get.offAllNamed(targetRoute);
+      try {
+        if (Get.isRegistered<TokenService>()) {
+          hasToken = TokenService.to.hasToken;
+        }
+
+        if (Get.isRegistered<AuthService>()) {
+          isAuthenticated = AuthService.to.isAuthenticated;
+        }
+      } catch (e) {
+        Logger.warning('SplashController: Error checking auth status: $e');
+      }
+
+      Logger.log('SplashController: Has auth token: $hasToken');
+      Logger.log('SplashController: Is authenticated: $isAuthenticated');
+
+      // Navigate based on authentication status
+      if (isAuthenticated) {
+        // Check if email verification is needed
+        try {
+          final user = Get.isRegistered<AuthService>() ? AuthService.to.currentUser.value : null;
+          if (user != null && !user.isEmailVerified) {
+            Logger.log('SplashController: Navigating to email verification');
+            Get.offAllNamed(AppRoutes.emailVerification);
+            return;
+          }
+        } catch (e) {
+          Logger.warning('SplashController: Error checking email verification: $e');
+        }
+
+        Logger.log('SplashController: Navigating to home (authenticated)');
+        Get.offAllNamed(AppRoutes.home);
+      } else {
+        Logger.log('SplashController: Navigating to auth (not authenticated)');
+        Get.offAllNamed(AppRoutes.auth);
+      }
 
     } catch (e) {
       Logger.error('SplashController: Navigation error: $e');
       if (!_isDisposed) {
-        // Fallback navigation
-        Logger.warning('SplashController: Using fallback navigation to home');
-        Get.offAllNamed(AppRoutes.home);
+        // Fallback navigation to auth
+        Logger.warning('SplashController: Using fallback navigation to auth');
+        Get.offAllNamed(AppRoutes.auth);
       }
     }
   }

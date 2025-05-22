@@ -1,8 +1,15 @@
-// app_routes.dart
+// lib/routes/app_routes.dart
 class AppRoutes {
   // Core feature routes
   static const String home = '/home';
   static const String admin = '/admin';
+
+  // Authentication routes
+  static const String auth = '/auth';
+  static const String login = '/login';
+  static const String register = '/register';
+  static const String forgotPassword = '/forgot-password';
+  static const String emailVerification = '/email-verification';
 
   // Feature routes
   static const String transactions = '/transactions';
@@ -14,7 +21,6 @@ class AppRoutes {
 
   // Utility routes
   static const String offline = '/offline';
-  static const String auth = '/auth';
   static const String internalError = '/internal-error';
   static const String language = '/language';
   static const String onboarding = '/onboarding';

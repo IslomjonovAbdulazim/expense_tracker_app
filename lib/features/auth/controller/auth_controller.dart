@@ -2,13 +2,13 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-import '../../../../routes/app_routes.dart';
-import '../../../../utils/helpers/logger.dart';
+import '../../../routes/app_routes.dart';
+import '../../../utils/helpers/logger.dart';
 import '../../../data/models/auth_models.dart';
 import '../../../utils/services/auth_service.dart';
 
 class AuthController extends GetxController {
-  final AuthService _authService = Get.find();
+  late final AuthService _authService;
 
   // Form keys
   final loginFormKey = GlobalKey<FormState>();
@@ -37,16 +37,50 @@ class AuthController extends GetxController {
   final isLoginMode = true.obs;
   final acceptTerms = false.obs;
 
-  // Getters for auth service state
-  AuthState get authState => _authService.authState.value;
-  User? get currentUser => _authService.currentUser.value;
-  bool get isAuthenticated => _authService.isAuthenticated;
-
   @override
   void onInit() {
     super.onInit();
-    // Listen to auth state changes
-    ever(_authService.authState, _handleAuthStateChange);
+    _initializeAuthService();
+  }
+
+  void _initializeAuthService() {
+    try {
+      if (Get.isRegistered<AuthService>()) {
+        _authService = Get.find<AuthService>();
+        // Listen to auth state changes
+        ever(_authService.authState, _handleAuthStateChange);
+        Logger.success('AuthController initialized with AuthService');
+      } else {
+        Logger.error('AuthService not registered - auth will not work');
+      }
+    } catch (e) {
+      Logger.error('Failed to initialize AuthController: $e');
+    }
+  }
+
+  // Getters for auth service state (with null safety)
+  AuthState get authState {
+    try {
+      return _authService.authState.value;
+    } catch (e) {
+      return const AuthState.unauthenticated();
+    }
+  }
+
+  User? get currentUser {
+    try {
+      return _authService.currentUser.value;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  bool get isAuthenticated {
+    try {
+      return _authService.isAuthenticated;
+    } catch (e) {
+      return false;
+    }
   }
 
   @override
@@ -155,16 +189,21 @@ class AuthController extends GetxController {
   Future<void> loginWithEmail() async {
     if (!loginFormKey.currentState!.validate()) return;
 
-    final request = LoginRequest(
-      email: emailController.text.trim(),
-      password: passwordController.text,
-    );
+    try {
+      final request = LoginRequest(
+        email: emailController.text.trim(),
+        password: passwordController.text,
+      );
 
-    final result = await _authService.loginWithEmail(request);
-    result.fold(
-          (failure) => Logger.error('Login failed: ${failure.message}'),
-          (user) => Logger.success('Login successful'),
-    );
+      final result = await _authService.loginWithEmail(request);
+      result.fold(
+            (failure) => Logger.error('Login failed: ${failure.message}'),
+            (user) => Logger.success('Login successful'),
+      );
+    } catch (e) {
+      Logger.error('Login error: $e');
+      _showErrorSnackbar('Login failed. Please try again.');
+    }
   }
 
   /// Email/Password Registration
@@ -176,85 +215,120 @@ class AuthController extends GetxController {
       return;
     }
 
-    final request = RegisterRequest(
-      email: emailController.text.trim(),
-      password: passwordController.text,
-      name: nameController.text.trim(),
-      phoneNumber: phoneController.text.trim().isNotEmpty
-          ? phoneController.text.trim()
-          : null,
-    );
+    try {
+      final request = RegisterRequest(
+        email: emailController.text.trim(),
+        password: passwordController.text,
+        name: nameController.text.trim(),
+        phoneNumber: phoneController.text.trim().isNotEmpty
+            ? phoneController.text.trim()
+            : null,
+      );
 
-    final result = await _authService.registerWithEmail(request);
-    result.fold(
-          (failure) => Logger.error('Registration failed: ${failure.message}'),
-          (user) => Logger.success('Registration successful'),
-    );
+      final result = await _authService.registerWithEmail(request);
+      result.fold(
+            (failure) => Logger.error('Registration failed: ${failure.message}'),
+            (user) => Logger.success('Registration successful'),
+      );
+    } catch (e) {
+      Logger.error('Registration error: $e');
+      _showErrorSnackbar('Registration failed. Please try again.');
+    }
   }
 
   /// Google Sign In
   Future<void> signInWithGoogle() async {
-    final result = await _authService.signInWithGoogle();
-    result.fold(
-          (failure) => Logger.error('Google sign in failed: ${failure.message}'),
-          (user) => Logger.success('Google sign in successful'),
-    );
+    try {
+      final result = await _authService.signInWithGoogle();
+      result.fold(
+            (failure) => Logger.error('Google sign in failed: ${failure.message}'),
+            (user) => Logger.success('Google sign in successful'),
+      );
+    } catch (e) {
+      Logger.error('Google sign in error: $e');
+      _showErrorSnackbar('Google sign in failed. Please try again.');
+    }
   }
 
   /// Apple Sign In
   Future<void> signInWithApple() async {
-    final result = await _authService.signInWithApple();
-    result.fold(
-          (failure) => Logger.error('Apple sign in failed: ${failure.message}'),
-          (user) => Logger.success('Apple sign in successful'),
-    );
+    try {
+      final result = await _authService.signInWithApple();
+      result.fold(
+            (failure) => Logger.error('Apple sign in failed: ${failure.message}'),
+            (user) => Logger.success('Apple sign in successful'),
+      );
+    } catch (e) {
+      Logger.error('Apple sign in error: $e');
+      _showErrorSnackbar('Apple sign in failed. Please try again.');
+    }
   }
 
   /// Reset Password
   Future<void> resetPassword() async {
     if (!resetPasswordFormKey.currentState!.validate()) return;
 
-    final request = ResetPasswordRequest(
-      email: resetEmailController.text.trim(),
-    );
+    try {
+      final request = ResetPasswordRequest(
+        email: resetEmailController.text.trim(),
+      );
 
-    final result = await _authService.resetPassword(request);
-    result.fold(
-          (failure) => _showErrorSnackbar(failure.message ?? 'Reset failed'),
-          (success) {
-        _showSuccessSnackbar('Reset instructions sent to your email');
-        Get.back(); // Close reset password dialog/page
-      },
-    );
+      final result = await _authService.resetPassword(request);
+      result.fold(
+            (failure) => _showErrorSnackbar(failure.message ?? 'Reset failed'),
+            (success) {
+          _showSuccessSnackbar('Reset instructions sent to your email');
+          Get.back(); // Close reset password dialog/page
+        },
+      );
+    } catch (e) {
+      Logger.error('Reset password error: $e');
+      _showErrorSnackbar('Reset failed. Please try again.');
+    }
   }
 
   /// Resend Verification Email
   Future<void> resendVerificationEmail() async {
-    final result = await _authService.resendVerificationEmail();
-    result.fold(
-          (failure) => _showErrorSnackbar(failure.message ?? 'Failed to resend email'),
-          (success) => _showSuccessSnackbar('Verification email sent'),
-    );
+    try {
+      final result = await _authService.resendVerificationEmail();
+      result.fold(
+            (failure) => _showErrorSnackbar(failure.message ?? 'Failed to resend email'),
+            (success) => _showSuccessSnackbar('Verification email sent'),
+      );
+    } catch (e) {
+      Logger.error('Resend verification error: $e');
+      _showErrorSnackbar('Failed to resend email. Please try again.');
+    }
   }
 
   /// Verify Email with Token
   Future<void> verifyEmail(String token) async {
-    final request = VerifyEmailRequest(token: token);
+    try {
+      final request = VerifyEmailRequest(token: token);
 
-    final result = await _authService.verifyEmail(request);
-    result.fold(
-          (failure) => _showErrorSnackbar(failure.message ?? 'Verification failed'),
-          (success) {
-        _showSuccessSnackbar('Email verified successfully!');
-        Get.offAllNamed(AppRoutes.home);
-      },
-    );
+      final result = await _authService.verifyEmail(request);
+      result.fold(
+            (failure) => _showErrorSnackbar(failure.message ?? 'Verification failed'),
+            (success) {
+          _showSuccessSnackbar('Email verified successfully!');
+          Get.offAllNamed(AppRoutes.home);
+        },
+      );
+    } catch (e) {
+      Logger.error('Email verification error: $e');
+      _showErrorSnackbar('Verification failed. Please try again.');
+    }
   }
 
   /// Logout
   Future<void> logout() async {
-    await _authService.logout();
-    Get.offAllNamed(AppRoutes.auth);
+    try {
+      await _authService.logout();
+      Get.offAllNamed(AppRoutes.auth);
+    } catch (e) {
+      Logger.error('Logout error: $e');
+      _showErrorSnackbar('Logout failed. Please try again.');
+    }
   }
 
   /// Validation methods

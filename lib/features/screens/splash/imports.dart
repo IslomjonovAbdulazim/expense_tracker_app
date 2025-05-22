@@ -13,6 +13,7 @@ import '../../../utils/extenstions/color_extension.dart';
 import '../../../utils/extenstions/text_style_extention.dart';
 import '../../../utils/helpers/app_diagnostics.dart';
 import '../../../utils/helpers/logger.dart';
+import '../../../utils/services/auth_service.dart';
 import '../../../utils/services/connectivity_service.dart';
 import '../../../utils/services/theme_service.dart';
 import '../../../utils/services/token_service.dart';

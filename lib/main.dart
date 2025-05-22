@@ -7,8 +7,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
 
 import 'core/di/service_locator.dart';
+import 'core/di/initial_binding.dart';
 import 'core/translations/app_translations.dart';
 import 'core/translations/language_controller.dart';
 import 'utils/helpers/app_diagnostics.dart';
@@ -21,6 +24,9 @@ void main() async {
 
   try {
     Logger.log('🚀 Starting app initialization...');
+
+    // Initialize Firebase FIRST (before any Firebase services)
+    await _initializeFirebase();
 
     // Configure system UI
     await _configureSystemUI();
@@ -43,7 +49,7 @@ void main() async {
     // Run app
     runApp(
       DevicePreview(
-        enabled: kIsWeb && kDebugMode, // Only enable in web debug mode
+        enabled: false, // Disabled for now to avoid issues
         data: DevicePreviewData(
           isDarkMode: true,
         ),
@@ -67,6 +73,32 @@ void main() async {
 
     // Run minimal app in case of error
     runApp(ErrorApp(error: e.toString()));
+  }
+}
+
+Future<void> _initializeFirebase() async {
+  try {
+    Logger.log('🔥 Initializing Firebase...');
+
+    // Try to initialize Firebase with options
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+
+    Logger.success('✅ Firebase initialized successfully');
+  } catch (e) {
+    Logger.error('❌ Firebase initialization failed: $e');
+
+    // Try to initialize without options (fallback)
+    try {
+      Logger.log('🔥 Trying Firebase initialization without options...');
+      await Firebase.initializeApp();
+      Logger.success('✅ Firebase initialized successfully (fallback)');
+    } catch (fallbackError) {
+      Logger.error('❌ Firebase fallback initialization failed: $fallbackError');
+      // Don't rethrow - we'll handle this gracefully by disabling Firebase features
+      Logger.warning('⚠️ Firebase features will be disabled');
+    }
   }
 }
 
@@ -126,6 +158,9 @@ Future<void> _debugInitialization() async {
   Logger.log('🔍 === DEBUG INITIALIZATION CHECK ===');
 
   try {
+    // Check Firebase status
+    Logger.log('🔥 Firebase apps: ${Firebase.apps.length}');
+
     // Check GetStorage functionality
     final storage = GetStorage();
     storage.write('debug_init_test', 'ok');
@@ -155,6 +190,8 @@ Future<void> _debugInitialization() async {
     Logger.log('🛣️ Total routes defined: ${AppPages.routes.length}');
     Logger.log(
         '🛣️ Splash route exists: ${AppPages.routes.any((r) => r.name == AppRoutes.splash)}');
+    Logger.log(
+        '🛣️ Auth route exists: ${AppPages.routes.any((r) => r.name == AppRoutes.auth)}');
     Logger.log(
         '🛣️ Home route exists: ${AppPages.routes.any((r) => r.name == AppRoutes.home)}');
     Logger.log(
@@ -204,11 +241,12 @@ class MyApp extends StatelessWidget {
               debugShowCheckedModeBanner: false,
               initialRoute: AppRoutes.splash,
               getPages: AppPages.routes,
+              initialBinding: InitialBinding(),
 
               // Enhanced error handling
               routingCallback: (routing) {
                 if (kDebugMode) {
-                  Logger.log('🧭 Navigating: ${routing?.current} -> ...');
+                  Logger.log('🧭 Navigating: ${routing?.current} -> ${routing?.previous}');
                 }
               },
 
@@ -268,8 +306,8 @@ class MyApp extends StatelessWidget {
                         ),
                         const SizedBox(height: 16),
                         ElevatedButton(
-                          onPressed: () => Get.offAllNamed(AppRoutes.home),
-                          child: const Text('Go to Home'),
+                          onPressed: () => Get.offAllNamed(AppRoutes.auth),
+                          child: const Text('Go to Login'),
                         ),
                         if (kDebugMode) ...[
                           const SizedBox(height: 8),

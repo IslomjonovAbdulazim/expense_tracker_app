@@ -1,24 +1,27 @@
-// lib/core/auth/services/auth_service.dart
+// lib/utils/services/auth_service.dart
 import 'package:dartz/dartz.dart';
 import 'package:get/get.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:firebase_auth/firebase_auth.dart' as fb;
+import 'package:firebase_core/firebase_core.dart';
 
-import '../../../core/network/network_service.dart';
-import '../../../utils/services/token_service.dart';
-import '../../../utils/helpers/logger.dart';
-import '../../../core/error/network_failure.dart';
+import '../../core/network/network_service.dart';
+import '../../utils/services/token_service.dart';
+import '../../utils/helpers/logger.dart';
+import '../../core/error/network_failure.dart';
 import '../../data/models/auth_models.dart';
 
 class AuthService extends GetxService {
   static AuthService get to => Get.find();
 
-  final NetworkService _networkService = Get.find();
-  final TokenService _tokenService = Get.find();
+  // Late initialization to avoid circular dependency
+  late final NetworkService _networkService;
+  late final TokenService _tokenService;
 
-  // Firebase Auth instance
-  final fb.FirebaseAuth _firebaseAuth = fb.FirebaseAuth.instance;
+  // Firebase Auth instance (nullable for safety)
+  fb.FirebaseAuth? _firebaseAuth;
+  bool _firebaseAvailable = false;
 
   // Google Sign In instance
   final GoogleSignIn _googleSignIn = GoogleSignIn(
@@ -32,7 +35,49 @@ class AuthService extends GetxService {
   @override
   void onInit() {
     super.onInit();
+    _initializeServices();
+    _initializeFirebase();
     _initializeAuthState();
+  }
+
+  void _initializeServices() {
+    try {
+      // Get services with null safety
+      if (Get.isRegistered<NetworkService>()) {
+        _networkService = Get.find<NetworkService>();
+      } else {
+        throw Exception('NetworkService not registered');
+      }
+
+      if (Get.isRegistered<TokenService>()) {
+        _tokenService = Get.find<TokenService>();
+      } else {
+        throw Exception('TokenService not registered');
+      }
+
+      Logger.success('AuthService dependencies initialized');
+    } catch (e) {
+      Logger.error('AuthService initialization failed: $e');
+      // Set to unauthenticated state if services are missing
+      authState.value = const AuthState.unauthenticated();
+    }
+  }
+
+  void _initializeFirebase() {
+    try {
+      // Check if Firebase is available and initialized
+      if (Firebase.apps.isNotEmpty) {
+        _firebaseAuth = fb.FirebaseAuth.instance;
+        _firebaseAvailable = true;
+        Logger.success('Firebase Auth initialized');
+      } else {
+        Logger.warning('Firebase not available - social auth disabled');
+        _firebaseAvailable = false;
+      }
+    } catch (e) {
+      Logger.error('Firebase Auth initialization failed: $e');
+      _firebaseAvailable = false;
+    }
   }
 
   Future<void> _initializeAuthState() async {
@@ -92,7 +137,10 @@ class AuthService extends GetxService {
       final error = 'Login error: $e';
       Logger.error(error);
       authState.value = AuthState.error(error);
-      return Left(NetworkFailure(message: error, statusCode: null));
+      return Left(NetworkFailure(
+        message: error,
+        statusCode: null,
+      ));
     }
   }
 
@@ -128,12 +176,25 @@ class AuthService extends GetxService {
       final error = 'Registration error: $e';
       Logger.error(error);
       authState.value = AuthState.error(error);
-      return Left(NetworkFailure(message: error, statusCode: null));
+      return Left(NetworkFailure(
+        message: error,
+        statusCode: null,
+      ));
     }
   }
 
   /// Google Sign In
   Future<Either<NetworkFailure, User>> signInWithGoogle() async {
+    if (!_firebaseAvailable) {
+      const error = 'Firebase not available - cannot use Google Sign In';
+      Logger.error(error);
+      authState.value = const AuthState.error(error);
+      return Left(NetworkFailure(
+        message: error,
+        statusCode: null,
+      ));
+    }
+
     try {
       authState.value = const AuthState.loading();
 
@@ -141,7 +202,10 @@ class AuthService extends GetxService {
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
       if (googleUser == null) {
         authState.value = const AuthState.unauthenticated();
-        return Left(NetworkFailure(message: 'Google sign in cancelled', statusCode: null));
+        return Left(NetworkFailure(
+          message: 'Google sign in cancelled',
+          statusCode: null,
+        ));
       }
 
       // Get Google Auth details
@@ -155,7 +219,7 @@ class AuthService extends GetxService {
 
       // Sign in to Firebase
       final fb.UserCredential userCredential =
-      await _firebaseAuth.signInWithCredential(credential);
+      await _firebaseAuth!.signInWithCredential(credential);
 
       // Get Firebase token
       final firebaseToken = await userCredential.user?.getIdToken();
@@ -177,12 +241,25 @@ class AuthService extends GetxService {
       final error = 'Google sign in error: $e';
       Logger.error(error);
       authState.value = AuthState.error(error);
-      return Left(NetworkFailure(message: error, statusCode: null));
+      return Left(NetworkFailure(
+        message: error,
+        statusCode: null,
+      ));
     }
   }
 
   /// Apple Sign In
   Future<Either<NetworkFailure, User>> signInWithApple() async {
+    if (!_firebaseAvailable) {
+      const error = 'Firebase not available - cannot use Apple Sign In';
+      Logger.error(error);
+      authState.value = const AuthState.error(error);
+      return Left(NetworkFailure(
+        message: error,
+        statusCode: null,
+      ));
+    }
+
     try {
       authState.value = const AuthState.loading();
 
@@ -190,7 +267,10 @@ class AuthService extends GetxService {
       if (!await SignInWithApple.isAvailable()) {
         const error = 'Apple Sign In is not available on this device';
         authState.value = const AuthState.error(error);
-        return Left(NetworkFailure(message: error, statusCode: null));
+        return Left(NetworkFailure(
+          message: error,
+          statusCode: null,
+        ));
       }
 
       // Trigger Apple Sign In
@@ -209,7 +289,7 @@ class AuthService extends GetxService {
 
       // Sign in to Firebase
       final fb.UserCredential userCredential =
-      await _firebaseAuth.signInWithCredential(oauthCredential);
+      await _firebaseAuth!.signInWithCredential(oauthCredential);
 
       // Get Firebase token
       final firebaseToken = await userCredential.user?.getIdToken();
@@ -237,7 +317,10 @@ class AuthService extends GetxService {
       final error = 'Apple sign in error: $e';
       Logger.error(error);
       authState.value = AuthState.error(error);
-      return Left(NetworkFailure(message: error, statusCode: null));
+      return Left(NetworkFailure(
+        message: error,
+        statusCode: null,
+      ));
     }
   }
 
@@ -287,7 +370,10 @@ class AuthService extends GetxService {
     } catch (e) {
       final error = 'Reset password error: $e';
       Logger.error(error);
-      return Left(NetworkFailure(message: error, statusCode: null));
+      return Left(NetworkFailure(
+        message: error,
+        statusCode: null,
+      ));
     }
   }
 
@@ -309,7 +395,10 @@ class AuthService extends GetxService {
     } catch (e) {
       final error = 'Change password error: $e';
       Logger.error(error);
-      return Left(NetworkFailure(message: error, statusCode: null));
+      return Left(NetworkFailure(
+        message: error,
+        statusCode: null,
+      ));
     }
   }
 
@@ -337,7 +426,10 @@ class AuthService extends GetxService {
     } catch (e) {
       final error = 'Email verification error: $e';
       Logger.error(error);
-      return Left(NetworkFailure(message: error, statusCode: null));
+      return Left(NetworkFailure(
+        message: error,
+        statusCode: null,
+      ));
     }
   }
 
@@ -359,7 +451,10 @@ class AuthService extends GetxService {
     } catch (e) {
       final error = 'Resend verification error: $e';
       Logger.error(error);
-      return Left(NetworkFailure(message: error, statusCode: null));
+      return Left(NetworkFailure(
+        message: error,
+        statusCode: null,
+      ));
     }
   }
 
@@ -380,7 +475,10 @@ class AuthService extends GetxService {
     } catch (e) {
       final error = 'Get current user error: $e';
       Logger.error(error);
-      return Left(NetworkFailure(message: error, statusCode: null));
+      return Left(NetworkFailure(
+        message: error,
+        statusCode: null,
+      ));
     }
   }
 
@@ -408,7 +506,10 @@ class AuthService extends GetxService {
     } catch (e) {
       final error = 'Token refresh error: $e';
       Logger.error(error);
-      return Left(NetworkFailure(message: error, statusCode: null));
+      return Left(NetworkFailure(
+        message: error,
+        statusCode: null,
+      ));
     }
   }
 
@@ -425,8 +526,10 @@ class AuthService extends GetxService {
         await _googleSignIn.signOut();
       }
 
-      // Sign out from Firebase
-      await _firebaseAuth.signOut();
+      // Sign out from Firebase if available
+      if (_firebaseAvailable && _firebaseAuth != null) {
+        await _firebaseAuth!.signOut();
+      }
 
       // Clear local data
       await _tokenService.clearToken();
@@ -447,6 +550,7 @@ class AuthService extends GetxService {
   bool get isAuthenticated => authState.value is AuthAuthenticated;
   bool get isLoading => authState.value is AuthLoading;
   bool get hasError => authState.value is AuthError;
+  bool get isFirebaseAvailable => _firebaseAvailable;
 
   String? get errorMessage {
     final state = authState.value;
@@ -475,7 +579,10 @@ class AuthService extends GetxService {
     } catch (e) {
       final error = 'Update profile error: $e';
       Logger.error(error);
-      return Left(NetworkFailure(message: error, statusCode: null));
+      return Left(NetworkFailure(
+        message: error,
+        statusCode: null,
+      ));
     }
   }
 
@@ -497,7 +604,10 @@ class AuthService extends GetxService {
     } catch (e) {
       final error = 'Delete account error: $e';
       Logger.error(error);
-      return Left(NetworkFailure(message: error, statusCode: null));
+      return Left(NetworkFailure(
+        message: error,
+        statusCode: null,
+      ));
     }
   }
 }
