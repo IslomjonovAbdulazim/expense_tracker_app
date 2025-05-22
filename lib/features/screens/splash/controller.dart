@@ -1,89 +1,172 @@
+// lib/features/screens/splash/controller.dart
 part of 'imports.dart';
 
-class _Controller extends GetxController with GetSingleTickerProviderStateMixin {
-  late AnimationController animationController;
-  late Animation<double> logoAnimation;
-  late Animation<double> textAnimation;
-  late Animation<double> fadeAnimation;
-  late Animation<Offset> slideAnimation;
+class SplashController extends GetxController {
+  final RxBool isInitialized = false.obs;
+  final RxString initializationMessage = 'Initializing...'.obs;
+  final RxDouble progress = 0.0.obs;
+
+  bool _isDisposed = false;
+  Timer? _progressTimer;
 
   @override
   void onInit() {
     super.onInit();
-    _initializeAnimations();
-    _startSplashSequence();
+    _startInitializationSequence();
   }
 
-  void _initializeAnimations() {
-    animationController = AnimationController(
-      duration: const Duration(milliseconds: 2500),
-      vsync: this,
-    );
+  void _startInitializationSequence() {
+    if (_isDisposed) return;
 
-    // Logo scale animation
-    logoAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: animationController,
-      curve: const Interval(0.0, 0.4, curve: Curves.elasticOut),
-    ));
+    // Start progress animation
+    _startProgressAnimation();
 
-    // Text fade animation
-    textAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: animationController,
-      curve: const Interval(0.3, 0.7, curve: Curves.easeIn),
-    ));
-
-    // Overall fade animation
-    fadeAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: animationController,
-      curve: const Interval(0.0, 0.6, curve: Curves.easeInOut),
-    ));
-
-    // Slide animation for tagline
-    slideAnimation = Tween<Offset>(
-      begin: const Offset(0, 0.5),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: animationController,
-      curve: const Interval(0.5, 0.9, curve: Curves.easeOut),
-    ));
+    // Start actual initialization
+    _performInitialization();
   }
 
-  void _startSplashSequence() async {
-    // Start animations
-    animationController.forward();
+  void _startProgressAnimation() {
+    if (_isDisposed) return;
 
-    // Wait for animation to complete + small delay
-    await Future.delayed(const Duration(milliseconds: 3000));
+    _progressTimer = Timer.periodic(const Duration(milliseconds: 50), (timer) {
+      if (_isDisposed) {
+        timer.cancel();
+        return;
+      }
 
-    // Navigate to appropriate screen
-    _navigateToNextScreen();
+      if (progress.value < 1.0) {
+        progress.value += 0.02; // Increment progress
+      } else {
+        timer.cancel();
+      }
+    });
   }
 
-  void _navigateToNextScreen() {
-    // Check if PIN is set
-    final storage = GetStorage();
-    final isPinProtected = storage.read('app_pin_code') != null;
+  Future<void> _performInitialization() async {
+    if (_isDisposed) return;
 
-    if (isPinProtected) {
-      Get.offAllNamed(AppRoutes.pinCode);
-    } else {
-      final hasToken = TokenService.to.hasToken;
-      Get.offAllNamed(hasToken ? AppRoutes.admin : AppRoutes.home);
+    try {
+      // Phase 1: Initialize services
+      await _initializeServices();
+      if (_isDisposed) return;
+
+      // Phase 2: Verify services
+      await _verifyServices();
+      if (_isDisposed) return;
+
+      // Phase 3: Wait for minimum splash time
+      await _waitForMinimumDuration();
+      if (_isDisposed) return;
+
+      // Phase 4: Navigate to next screen
+      await _navigateToNextScreen();
+
+    } catch (e) {
+      Logger.error('Splash initialization failed: $e');
+      if (!_isDisposed) {
+        _handleInitializationError(e);
+      }
     }
+  }
+
+  Future<void> _initializeServices() async {
+    if (_isDisposed) return;
+
+    initializationMessage.value = 'Loading services...';
+
+    // Simulate service initialization
+    await Future.delayed(const Duration(milliseconds: 800));
+
+    if (_isDisposed) return;
+
+    initializationMessage.value = 'Checking configuration...';
+
+    await Future.delayed(const Duration(milliseconds: 400));
+  }
+
+  Future<void> _verifyServices() async {
+    if (_isDisposed) return;
+
+    initializationMessage.value = 'Almost ready...';
+
+    await Future.delayed(const Duration(milliseconds: 400));
+
+    if (_isDisposed) return;
+
+    isInitialized.value = true;
+    initializationMessage.value = 'Ready!';
+  }
+
+  Future<void> _waitForMinimumDuration() async {
+    if (_isDisposed) return;
+
+    // Ensure splash is shown for at least 2 seconds total
+    await Future.delayed(const Duration(milliseconds: 600));
+  }
+
+  Future<void> _navigateToNextScreen() async {
+    if (_isDisposed) return;
+
+    try {
+      final storage = GetStorage();
+
+      // Check if onboarding was completed
+      final hasCompletedOnboarding = storage.read(StorageKeys.hasCompletedOnboarding) ?? false;
+
+      if (!hasCompletedOnboarding) {
+        Get.offAllNamed(AppRoutes.onboarding);
+        return;
+      }
+
+      // Check if PIN is required
+      final isPinProtected = storage.read(StorageKeys.pinProtected) ?? false;
+
+      if (isPinProtected) {
+        Get.offAllNamed(AppRoutes.pinCode);
+        return;
+      }
+
+      // Check authentication status
+      final hasToken = Get.isRegistered<TokenService>() ?
+      TokenService.to.hasToken : false;
+
+      // Navigate to appropriate main screen
+      if (hasToken) {
+        Get.offAllNamed(AppRoutes.admin);
+      } else {
+        Get.offAllNamed(AppRoutes.home);
+      }
+
+    } catch (e) {
+      Logger.error('Navigation error: $e');
+      // Fallback to home screen
+      if (!_isDisposed) {
+        Get.offAllNamed(AppRoutes.home);
+      }
+    }
+  }
+
+  void _handleInitializationError(dynamic error) {
+    if (_isDisposed) return;
+
+    initializationMessage.value = 'Something went wrong...';
+
+    // Navigate to home after error
+    Timer(const Duration(seconds: 2), () {
+      if (!_isDisposed) {
+        Get.offAllNamed(AppRoutes.home);
+      }
+    });
   }
 
   @override
   void onClose() {
-    animationController.dispose();
+    _isDisposed = true;
+
+    // Cancel progress timer
+    _progressTimer?.cancel();
+    _progressTimer = null;
+
     super.onClose();
   }
 }

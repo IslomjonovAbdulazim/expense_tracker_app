@@ -3,6 +3,6 @@ part of 'imports.dart';
 class LanguageBinding extends Bindings {
   @override
   void dependencies() {
-    Get.lazyPut(() => _Controller());
+    Get.lazyPut(() => LanguageSelectController());
   }
 }

@@ -1,6 +1,7 @@
+// lib/features/screens/splash/page.dart
 part of 'imports.dart';
 
-class SplashPage extends GetView<_Controller> {
+class SplashPage extends GetView<SplashController> {
   const SplashPage({Key? key}) : super(key: key);
 
   @override
@@ -17,95 +18,143 @@ class SplashPage extends GetView<_Controller> {
             ],
           ),
         ),
-        child: Center(
+        child: SafeArea(
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // Animated Logo
-              AnimatedBuilder(
-                animation: controller.logoAnimation,
-                builder: (context, child) {
-                  return Transform.scale(
-                    scale: controller.logoAnimation.value,
-                    child: FadeTransition(
-                      opacity: controller.fadeAnimation,
-                      child: Container(
-                        width: 120,
-                        height: 120,
-                        decoration: BoxDecoration(
-                          color: context.primary.withOpacity(0.1),
-                          shape: BoxShape.circle,
-                        ),
-                        child: Center(
-                          child: AdaptiveLogo(
-                            width: 80,
-                            height: 80,
+              // Logo section
+              Expanded(
+                flex: 3,
+                child: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      // Logo with subtle scale animation
+                      Obx(() => AnimatedScale(
+                        scale: controller.isInitialized.value ? 1.0 : 0.8,
+                        duration: const Duration(milliseconds: 800),
+                        curve: Curves.elasticOut,
+                        child: Container(
+                          width: 120,
+                          height: 120,
+                          decoration: BoxDecoration(
+                            color: context.primary.withOpacity(0.1),
+                            shape: BoxShape.circle,
                           ),
-                        ),
-                      ),
-                    ),
-                  );
-                },
-              ),
-
-              const SizedBox(height: 40),
-
-              // App Name with Animation
-              AnimatedBuilder(
-                animation: controller.textAnimation,
-                builder: (context, child) {
-                  return FadeTransition(
-                    opacity: controller.textAnimation,
-                    child: Column(
-                      children: [
-                        Text(
-                          'Money Track',
-                          style: context.headingLarge.copyWith(
-                            color: context.primary,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: 1.2,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        SlideTransition(
-                          position: controller.slideAnimation,
-                          child: FadeTransition(
-                            opacity: controller.textAnimation,
-                            child: Text(
-                              'Track your expenses smartly',
-                              style: context.headingMedium.copyWith(
-                                color: context.textSecondary,
-                                fontWeight: FontWeight.w400,
-                              ),
+                          child: const Center(
+                            child: AdaptiveLogo(
+                              width: 80,
+                              height: 80,
                             ),
                           ),
                         ),
-                      ],
-                    ),
-                  );
-                },
+                      )),
+                    ],
+                  ),
+                ),
               ),
 
-              const SizedBox(height: 60),
+              // App name and tagline
+              Expanded(
+                flex: 2,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    // App name with fade animation
+                    Obx(() => AnimatedOpacity(
+                      opacity: controller.progress.value > 0.3 ? 1.0 : 0.0,
+                      duration: const Duration(milliseconds: 600),
+                      child: Text(
+                        'Money Track',
+                        style: context.headingLarge.copyWith(
+                          color: context.primary,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 1.2,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    )),
 
-              // Loading Animation
-              AnimatedBuilder(
-                animation: controller.fadeAnimation,
-                builder: (context, child) {
-                  return FadeTransition(
-                    opacity: controller.fadeAnimation,
-                    child: SizedBox(
-                      width: 40,
-                      height: 40,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 3,
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          context.primary,
+                    const SizedBox(height: 12),
+
+                    // Tagline with slide animation
+                    Obx(() => AnimatedSlide(
+                      offset: controller.progress.value > 0.6
+                          ? Offset.zero
+                          : const Offset(0, 0.5),
+                      duration: const Duration(milliseconds: 600),
+                      child: AnimatedOpacity(
+                        opacity: controller.progress.value > 0.6 ? 1.0 : 0.0,
+                        duration: const Duration(milliseconds: 600),
+                        child: Text(
+                          'Track your expenses smartly',
+                          style: context.bodyLarge.copyWith(
+                            color: context.textSecondary,
+                            fontWeight: FontWeight.w400,
+                          ),
+                          textAlign: TextAlign.center,
                         ),
                       ),
+                    )),
+                  ],
+                ),
+              ),
+
+              // Progress section
+              Expanded(
+                flex: 1,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    // Status message
+                    Obx(() => AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 300),
+                      child: Text(
+                        controller.initializationMessage.value,
+                        key: ValueKey(controller.initializationMessage.value),
+                        style: context.bodyMedium.copyWith(
+                          color: context.textSecondary,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    )),
+
+                    const SizedBox(height: 24),
+
+                    // Progress indicator
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 60),
+                      child: Column(
+                        children: [
+                          // Linear progress bar
+                          Obx(() => LinearProgressIndicator(
+                            value: controller.progress.value,
+                            backgroundColor: context.primary.withOpacity(0.2),
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              context.primary,
+                            ),
+                            minHeight: 4,
+                          )),
+
+                          const SizedBox(height: 16),
+
+                          // Circular loading indicator
+                          SizedBox(
+                            width: 32,
+                            height: 32,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 3,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                context.primary,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  );
-                },
+
+                    const SizedBox(height: 40),
+                  ],
+                ),
               ),
             ],
           ),

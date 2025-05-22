@@ -1,7 +1,7 @@
 // lib/features/screens/pin_code/_controller.dart
 part of 'imports.dart';
 
-class _Controller extends GetxController {
+class PinCodeController extends GetxController {
   // Constants
   static const int pinLength = 4;
   static const String _pinStorageKey = 'app_pin_code';

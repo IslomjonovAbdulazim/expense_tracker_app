@@ -3,6 +3,6 @@ part of 'imports.dart';
 class PinCodeBinding extends Bindings {
   @override
   void dependencies() {
-    Get.lazyPut(() => _Controller());
+    Get.lazyPut(() => PinCodeController());
   }
 }

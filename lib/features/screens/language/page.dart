@@ -1,6 +1,6 @@
 part of 'imports.dart';
 
-class LanguagePage extends GetView<_Controller> {
+class LanguagePage extends GetView<LanguageSelectController> {
   const LanguagePage({super.key});
 
   @override

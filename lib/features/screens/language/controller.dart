@@ -1,6 +1,6 @@
 part of 'imports.dart';
 
-class _Controller extends GetxController {
+class LanguageSelectController extends GetxController {
   // Get instance of the global language controller
   final LanguageController _languageController = Get.find<LanguageController>();
 

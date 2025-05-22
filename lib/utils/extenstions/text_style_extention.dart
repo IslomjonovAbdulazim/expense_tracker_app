@@ -1,5 +1,5 @@
+// lib/utils/extenstions/text_style_extention.dart
 import 'package:flutter/material.dart';
-import 'package:expense_tracker_app/utils/extenstions/color_extension.dart';
 
 import '../constants/font_constants.dart';
 
@@ -155,7 +155,7 @@ extension AppTextStyles on BuildContext {
     fontWeight: FontWeight.w800,
     height: 1.2,
     letterSpacing: 0.5,
-    color: backgroundColor, // For contrast on colored buttons
+    color: Theme.of(this).scaffoldBackgroundColor, // For contrast on colored buttons
   );
 
   /// Caption for images, footnotes, and supplementary info
@@ -188,59 +188,61 @@ extension AppTextStyles on BuildContext {
     textBaseline: TextBaseline.alphabetic,
     color: Theme.of(this).colorScheme.onSurface.withOpacity(0.7),
   );
+}
 
-  // MODIFIERS - Helper methods to modify existing styles
-
+// MODIFIERS - Helper methods to modify existing styles
+extension TextStyleModifiers on TextStyle {
   /// Makes any text style bold
-  TextStyle bold(TextStyle base) => base.copyWith(
-    fontWeight: FontWeight.bold,
-  );
+  TextStyle get bold => copyWith(fontWeight: FontWeight.bold);
 
   /// Makes any text style italic
-  TextStyle italic(TextStyle base) => base.copyWith(
-    fontStyle: FontStyle.italic,
-  );
+  TextStyle get italic => copyWith(fontStyle: FontStyle.italic);
 
-  /// Applies primary color to any text style
-  TextStyle primary(TextStyle base) => base.copyWith(
-    color: Theme.of(this).colorScheme.primary,
-  );
+  /// Apply line-through decoration to text (for crossed-out prices, completed tasks)
+  TextStyle get lineThrough => copyWith(decoration: TextDecoration.lineThrough);
 
-  /// Applies secondary color to any text style
-  TextStyle secondary(TextStyle base) => base.copyWith(
-    color: Theme.of(this).colorScheme.secondary,
-  );
+  /// Apply underline decoration to text
+  TextStyle get underlined => copyWith(decoration: TextDecoration.underline);
 
-  /// Applies error color to any text style
-  TextStyle error(TextStyle base) => base.copyWith(
-    color: Theme.of(this).colorScheme.error,
-  );
+  /// Add letter spacing for specific effects
+  TextStyle withLetterSpacing(double value) => copyWith(letterSpacing: value);
 
-  /// Makes any text style subdued (reduced opacity)
-  TextStyle subdued(TextStyle base) => base.copyWith(
-    color: (base.color ?? Theme.of(this).colorScheme.onSurface).withOpacity(0.6),
+  /// Adjust the text size by a percentage
+  TextStyle scale(double factor) => copyWith(fontSize: (fontSize ?? 14) * factor);
+
+  /// Apply a specific color
+  TextStyle withColor(Color color) => copyWith(color: color);
+
+  /// Apply opacity to the text color
+  TextStyle withOpacity(double opacity) => copyWith(
+    color: (color ?? const Color(0xFF000000)).withOpacity(opacity),
   );
 }
 
-// Additional extension for more advanced text styling options
-extension TextStyleModifiers on TextStyle {
-  /// Apply line-through decoration to text (for crossed-out prices, completed tasks)
-  TextStyle get lineThrough => copyWith(
-    decoration: TextDecoration.lineThrough,
+// COLOR MODIFIERS - Helper methods to apply theme colors to text styles
+extension TextStyleColorModifiers on BuildContext {
+  /// Apply primary color to any text style
+  TextStyle primaryText(TextStyle base) => base.copyWith(
+    color: Theme.of(this).colorScheme.primary,
   );
 
-  /// Apply underline decoration to text
-  TextStyle get underlined => copyWith(
-    decoration: TextDecoration.underline,
+  /// Apply secondary color to any text style
+  TextStyle secondaryText(TextStyle base) => base.copyWith(
+    color: Theme.of(this).colorScheme.secondary,
   );
 
-  /// Add letter spacing for specific effects
-  TextStyle withLetterSpacing(double value) => copyWith(
-    letterSpacing: value,
+  /// Apply tertiary color to any text style
+  TextStyle tertiaryText(TextStyle base) => base.copyWith(
+    color: Theme.of(this).colorScheme.tertiary,
   );
 
-  /// Adjust the text size by a percentage
-  TextStyle scale(double factor) => copyWith(
-    fontSize: (fontSize ?? 14) * factor,
+  /// Apply error color to any text style
+  TextStyle errorText(TextStyle base) => base.copyWith(
+    color: Theme.of(this).colorScheme.error,
+  );
+
+  /// Make any text style subdued (reduced opacity)
+  TextStyle subduedText(TextStyle base) => base.copyWith(
+    color: (base.color ?? Theme.of(this).colorScheme.onSurface).withOpacity(0.6),
   );
 }

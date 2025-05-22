@@ -1,7 +1,7 @@
 // lib/features/screens/pin_code/_page.dart
 part of 'imports.dart';
 
-class PinCodePage extends GetView<_Controller> {
+class PinCodePage extends GetView<PinCodeController> {
   const PinCodePage({Key? key}) : super(key: key);
 
   @override

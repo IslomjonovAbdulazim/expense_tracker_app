@@ -1,7 +1,7 @@
-// lib/features/screens/onboarding/_controller.dart
+// lib/features/screens/onboarding/controller.dart
 part of 'imports.dart';
 
-class _Controller extends GetxController {
+class OnboardingController extends GetxController {
   // Current page index
   final currentPage = 0.obs;
 
