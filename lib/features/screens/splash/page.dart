@@ -50,56 +50,14 @@ class SplashPage extends GetView<SplashController> {
                     // Bottom spacer
                     const Spacer(flex: 2),
 
-                    // Progress section
+                    // Progress section with enhanced debugging
                     _buildProgressSection(context),
 
-                    // Bottom padding with theme indicator and test button
-                    Column(
-                      children: [
-                        if (kDebugMode) ...[
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 6,
-                            ),
-                            decoration: BoxDecoration(
-                              color: context.primary.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  'Theme: ${themeController.themeStatusText}',
-                                  style: context.bodySmall.copyWith(
-                                    color: context.textSecondary,
-                                    fontSize: 10,
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                GestureDetector(
-                                  onTap: () => themeController.cycleTheme(),
-                                  child: Container(
-                                    padding: const EdgeInsets.all(4),
-                                    decoration: BoxDecoration(
-                                      color: context.primary.withOpacity(0.2),
-                                      borderRadius: BorderRadius.circular(4),
-                                    ),
-                                    child: Icon(
-                                      themeController.currentThemeIcon,
-                                      size: 12,
-                                      color: context.primary,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                        ],
-                        const SizedBox(height: 40),
-                      ],
-                    ),
+                    // Debug section (only in debug mode)
+                    if (kDebugMode) _buildDebugSection(context),
+
+                    // Bottom section with theme controls and skip option
+                    _buildBottomSection(context, themeController),
                   ],
                 ),
               ),
@@ -237,9 +195,9 @@ class SplashPage extends GetView<SplashController> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Status message
+            // Status message with error handling
             SizedBox(
-              height: 24,
+              height: 48, // Increased height for better text visibility
               child: AnimatedSwitcher(
                 duration: const Duration(milliseconds: 400),
                 transitionBuilder: (child, animation) {
@@ -257,70 +215,118 @@ class SplashPage extends GetView<SplashController> {
                     ),
                   );
                 },
-                child: Text(
-                  controller.initializationMessage.value,
+                child: Column(
                   key: ValueKey(controller.initializationMessage.value),
-                  style: context.bodyMedium.copyWith(
-                    color: context.textSecondary,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                  ),
-                  textAlign: TextAlign.center,
+                  children: [
+                    Text(
+                      controller.initializationMessage.value,
+                      style: context.bodyMedium.copyWith(
+                        color: controller.hasError.value
+                            ? context.error
+                            : context.textSecondary,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    if (controller.hasError.value) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        'Tap to continue anyway',
+                        style: context.bodySmall.copyWith(
+                          color: context.textSecondary,
+                          fontSize: 12,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ],
                 ),
               ),
             ),
 
-            const SizedBox(height: 32),
+            const SizedBox(height: 24),
 
             // Progress indicators container
             Container(
               constraints: const BoxConstraints(maxWidth: 280),
               child: Column(
                 children: [
-                  // Linear progress bar with glow effect
-                  Container(
-                    height: 6,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(3),
-                      boxShadow: [
-                        BoxShadow(
-                          color: context.primary.withOpacity(0.3),
-                          blurRadius: 8,
-                          spreadRadius: 1,
+                  // Linear progress bar with percentage
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Container(
+                          height: 6,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(3),
+                            boxShadow: [
+                              BoxShadow(
+                                color: context.primary.withOpacity(0.3),
+                                blurRadius: 8,
+                                spreadRadius: 1,
+                              ),
+                            ],
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(3),
+                            child: LinearProgressIndicator(
+                              value: controller.progress.value,
+                              backgroundColor: context.primary.withOpacity(0.1),
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                  controller.hasError.value
+                                      ? context.error
+                                      : context.primary
+                              ),
+                              minHeight: 6,
+                            ),
+                          ),
                         ),
-                      ],
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(3),
-                      child: LinearProgressIndicator(
-                        value: controller.progress.value,
-                        backgroundColor: context.primary.withOpacity(0.1),
-                        valueColor: AlwaysStoppedAnimation<Color>(context.primary),
-                        minHeight: 6,
                       ),
-                    ),
+                      const SizedBox(width: 12),
+                      Text(
+                        '${(controller.progress.value * 100).toInt()}%',
+                        style: context.bodySmall.copyWith(
+                          color: controller.hasError.value
+                              ? context.error
+                              : context.textSecondary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
                   ),
 
                   const SizedBox(height: 24),
 
-                  // Circular loading indicator with pulse effect
-                  AnimatedContainer(
-                    duration: const Duration(seconds: 2),
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: context.primary.withOpacity(0.3),
-                          blurRadius: 15,
-                          spreadRadius: 3,
-                        ),
-                      ],
-                    ),
-                    child: CircularProgressIndicator(
-                      strokeWidth: 3,
-                      valueColor: AlwaysStoppedAnimation<Color>(context.primary),
+                  // Circular loading indicator with error state
+                  GestureDetector(
+                    onTap: controller.hasError.value ? controller.skipToHome : null,
+                    child: AnimatedContainer(
+                      duration: const Duration(seconds: 2),
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: (controller.hasError.value
+                                ? context.error
+                                : context.primary).withOpacity(0.3),
+                            blurRadius: 15,
+                            spreadRadius: 3,
+                          ),
+                        ],
+                      ),
+                      child: controller.hasError.value
+                          ? Icon(
+                        Icons.error_outline,
+                        color: context.error,
+                        size: 32,
+                      )
+                          : CircularProgressIndicator(
+                        strokeWidth: 3,
+                        valueColor: AlwaysStoppedAnimation<Color>(context.primary),
+                      ),
                     ),
                   ),
                 ],
@@ -330,5 +336,124 @@ class SplashPage extends GetView<SplashController> {
         ),
       ),
     ));
+  }
+
+  Widget _buildDebugSection(BuildContext context) {
+    return Obx(() => AnimatedOpacity(
+      opacity: controller.showProgress.value ? 1.0 : 0.0,
+      duration: const Duration(milliseconds: 600),
+      child: Container(
+        margin: const EdgeInsets.only(top: 24),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          color: context.surface.withOpacity(0.8),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: context.dividerColor,
+            width: 1,
+          ),
+        ),
+        child: Column(
+          children: [
+            Text(
+              'Debug Info',
+              style: context.bodySmall.copyWith(
+                fontWeight: FontWeight.bold,
+                color: context.primary,
+              ),
+            ),
+            const SizedBox(height: 8),
+            if (controller.debugInfo.value.isNotEmpty)
+              Text(
+                controller.debugInfo.value,
+                style: context.bodySmall.copyWith(
+                  color: controller.hasError.value
+                      ? context.error
+                      : context.textSecondary,
+                  fontFamily: 'monospace',
+                ),
+                textAlign: TextAlign.center,
+              ),
+            const SizedBox(height: 8),
+            GestureDetector(
+              onTap: controller.skipToHome,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: context.primary.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  'Skip to Home',
+                  style: context.bodySmall.copyWith(
+                    color: context.primary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    ));
+  }
+
+  Widget _buildBottomSection(BuildContext context, ThemeController themeController) {
+    return Column(
+      children: [
+        const SizedBox(height: 24),
+
+        // Theme toggle and status (always visible in debug mode)
+        if (kDebugMode) ...[
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: context.primary.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Theme: ${themeController.themeStatusText}',
+                  style: context.bodySmall.copyWith(
+                    color: context.textSecondary,
+                    fontSize: 10,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                GestureDetector(
+                  onTap: () => themeController.cycleTheme(),
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: context.primary.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Icon(
+                      themeController.currentThemeIcon,
+                      size: 12,
+                      color: context.primary,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+        ],
+
+        // Version info (optional)
+        Text(
+          'v1.0.18+61',
+          style: context.bodySmall.copyWith(
+            color: context.textSecondary.withOpacity(0.6),
+            fontSize: 10,
+          ),
+        ),
+
+        const SizedBox(height: 40),
+      ],
+    );
   }
 }
