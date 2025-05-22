@@ -1,4 +1,4 @@
-// lib/features/screens/pin_code/_controller.dart
+// lib/features/screens/pin_code/controller.dart
 part of 'imports.dart';
 
 class PinCodeController extends GetxController {
@@ -176,6 +176,11 @@ class PinCodeController extends GetxController {
     temporaryPin.value = '';
     isConfirming.value = false;
     errorMessage.value = '';
+
+    // Light haptic feedback for reset action
+    if (useHapticFeedback) {
+      HapticFeedback.lightImpact();
+    }
   }
 
   // Change existing PIN
@@ -186,9 +191,29 @@ class PinCodeController extends GetxController {
 
       isPinSet.value = false;
       resetPinSetup();
+
+      // Provide haptic feedback for successful reset
+      if (useHapticFeedback) {
+        HapticFeedback.lightImpact();
+      }
     } catch (e) {
       Logger.error('Error changing PIN: $e');
       errorMessage.value = 'Failed to reset PIN. Please try again.';
+
+      // Error haptic feedback
+      if (useHapticFeedback) {
+        HapticFeedback.heavyImpact();
+      }
     }
+  }
+
+  // Clear any error states
+  void clearError() {
+    errorMessage.value = '';
+  }
+
+  // Check if PIN is valid (4 digits)
+  bool isValidPin(String pin) {
+    return pin.length == pinLength && pin.contains(RegExp(r'^[0-9]+$'));
   }
 }

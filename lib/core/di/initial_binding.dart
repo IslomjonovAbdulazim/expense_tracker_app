@@ -2,7 +2,7 @@
 import 'package:get/get.dart';
 
 import '../../utils/services/connectivity_service.dart';
-import '../../utils/services/network_service.dart';
+import '../network/network_service.dart';
 import '../../utils/services/pin_service.dart';
 import '../../utils/services/theme_service.dart';
 import '../translations/language_controller.dart';
@@ -16,8 +16,8 @@ class InitialBinding extends Bindings {
     }
 
     // Initialize PIN service if not already done
-    if (!Get.isRegistered<PinService>()) {
-      await Get.putAsync<PinService>(() async => await PinService().init());
+    if (!Get.isRegistered<EnhancedPinService>()) {
+      await Get.putAsync<EnhancedPinService>(() async => EnhancedPinService());
     }
 
 

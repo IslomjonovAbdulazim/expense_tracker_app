@@ -1,12 +1,10 @@
 // lib/core/di/service_locator.dart
 import 'package:get/get.dart';
 
-import '../../data/providers/dio_manager.dart';
 import '../../utils/services/connectivity_service.dart';
-import '../../utils/services/pin_service.dart';
 import '../../utils/services/token_service.dart';
-import '../../utils/services/network_service.dart';
 import '../../utils/helpers/logger.dart';
+import '../network/network_service.dart';
 
 Future<void> setupServiceLocator() async {
   try {
@@ -21,9 +19,6 @@ Future<void> setupServiceLocator() async {
     // Phase 3: Network services
     await _initializeNetworkServices();
 
-    // Phase 4: App-specific services
-    await _initializeAppServices();
-
     Logger.success('Service locator setup completed successfully');
 
   } catch (e) {
@@ -36,14 +31,11 @@ Future<void> setupServiceLocator() async {
 Future<void> _initializeCoreServices() async {
   Logger.log('Initializing core services...');
 
-  // Configure Dio first
-  configureDio();
-
   // Initialize network service
   if (!Get.isRegistered<NetworkService>()) {
     final networkService = NetworkService();
-    networkService.initialize();
     Get.put(networkService, permanent: true);
+    Logger.success('NetworkService initialized');
   }
 }
 
@@ -65,18 +57,21 @@ Future<void> _initializeAuthServices() async {
     }
   }
 
-  // PIN service
-  if (!Get.isRegistered<PinService>()) {
+  // PIN service - using your existing PinService for now
+  // You can replace this with EnhancedPinService later
+  /*
+  if (!Get.isRegistered<EnhancedPinService>()) {
     try {
-      await Get.putAsync<PinService>(
-            () async => await PinService().init(),
+      await Get.putAsync<EnhancedPinService>(
+        () async => await EnhancedPinService().init(),
         permanent: true,
       );
-      Logger.success('PinService initialized');
+      Logger.success('EnhancedPinService initialized');
     } catch (e) {
-      Logger.error('PinService initialization failed: $e');
+      Logger.error('EnhancedPinService initialization failed: $e');
     }
   }
+  */
 }
 
 Future<void> _initializeNetworkServices() async {
@@ -99,13 +94,6 @@ Future<void> _initializeNetworkServices() async {
   }
 }
 
-Future<void> _initializeAppServices() async {
-  Logger.log('Initializing app-specific services...');
-
-  // Add any additional app-specific services here
-  // Example: Analytics, Crash reporting, etc.
-}
-
 Future<void> _initializeMinimalServices() async {
   Logger.warning('Initializing minimal services fallback...');
 
@@ -116,10 +104,8 @@ Future<void> _initializeMinimalServices() async {
     }
 
     // Configure basic network
-    configureDio();
     if (!Get.isRegistered<NetworkService>()) {
       final networkService = NetworkService();
-      networkService.initialize();
       Get.put(networkService, permanent: true);
     }
 
@@ -131,12 +117,12 @@ Future<void> _initializeMinimalServices() async {
 // Service health check
 bool areServicesHealthy() {
   final requiredServices = [
-    TokenService,
-    NetworkService,
+    'TokenService',
+    'NetworkService',
   ];
 
   for (final serviceType in requiredServices) {
-    if (!Get.isRegistered(tag: serviceType.toString())) {
+    if (!Get.isRegistered(tag: serviceType)) {
       Logger.warning('Service not registered: $serviceType');
       return false;
     }
@@ -149,7 +135,6 @@ bool areServicesHealthy() {
 Map<String, bool> getServiceDiagnostics() {
   return {
     'TokenService': Get.isRegistered<TokenService>(),
-    'PinService': Get.isRegistered<PinService>(),
     'NetworkService': Get.isRegistered<NetworkService>(),
     'ConnectivityService': Get.isRegistered<ConnectivityService>(),
   };

@@ -5,7 +5,7 @@ import '../../../../core/translations/language_controller.dart';
 import '../../../../core/translations/translation_keys.dart';
 import '../../../../utils/extenstions/color_extension.dart';
 import '../../../../utils/extenstions/text_style_extention.dart';
-import '../../../shared/buttons/platform_buttons.dart';
+import '../../../shared/widgets/platform_buttons.dart';
 
 part 'binding.dart';
 part 'controller.dart';
