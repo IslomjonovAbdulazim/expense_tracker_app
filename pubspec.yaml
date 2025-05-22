@@ -19,6 +19,7 @@ dependencies:
   shared_preferences: ^2.5.1 # Required for PIN service
   flutter_secure_storage: ^9.2.4
   crypto: ^3.0.6
+  flutter_dynamic_icon: ^2.1.0
 
   # Networking
   dio: ^5.8.0+1             # HTTP client
@@ -39,6 +40,7 @@ dependencies:
   flutter_easy_dialogs: ^4.0.3 # Dialogs
   awesome_dialog: ^3.2.1    # Advanced dialogs
 
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -57,6 +59,7 @@ flutter:
     - assets/icons/
     - assets/brand/
     - assets/sounds/
+    - assets/images/
 
   fonts:
     - family: Montserrat
@@ -205,5 +208,6 @@ flutter:
 flutter_icons:
   android: true
   ios: true
-  image_path: "assets/brand/logo.png"
-  adaptive_icon_background: "#0D47A1"  # Blue background color
+  image_path: "assets/brand/logo-transparent.png"
+  adaptive_icon_background: "#5E72E4"  # Your primary color
+  adaptive_icon_foreground: "assets/brand/logo-transparent.png"

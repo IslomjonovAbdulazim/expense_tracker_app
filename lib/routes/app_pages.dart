@@ -1,4 +1,5 @@
 // app_pages.dart
+import 'package:expense_tracker_app/features/screens/oboarding/imports.dart';
 import 'package:get/get.dart';
 import '../features/home/imports.dart';
 import '../features/screens/language/imports.dart';
@@ -37,6 +38,12 @@ class AppPages {
       name: AppRoutes.language,
       page: () => const LanguagePage(),
       binding: LanguageBinding(),
+    ),
+    GetPage(
+      name: AppRoutes.onboarding,
+      page: () => const OnboardingPage(),
+      binding: OnboardingBinding(),
+      transition: Transition.fadeIn,
     ),
   ];
 }

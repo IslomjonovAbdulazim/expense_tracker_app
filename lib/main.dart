@@ -78,11 +78,12 @@ class MyApp extends StatelessWidget {
   String _determineInitialRoute() {
     final pinService = Get.find<PinService>();
     final storage = GetStorage();
+    storage.erase();
 
     // Check if the app has completed onboarding
     final hasCompletedOnboarding = storage.read(StorageKeys.hasCompletedOnboarding) ?? false;
     if (!hasCompletedOnboarding) {
-      // todo return AppRoutes.onboarding; // First-time user goes to onboarding
+      return AppRoutes.onboarding; // First-time user goes to onboarding
     }
 
     // Check if PIN protection is enabled
@@ -95,7 +96,7 @@ class MyApp extends StatelessWidget {
       }
     } else {
       // No PIN protection, go directly to home
-      return AppRoutes.pinCode;
+      return AppRoutes.home;
     }
   }
 }
