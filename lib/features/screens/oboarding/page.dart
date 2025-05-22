@@ -65,22 +65,23 @@ class OnboardingPage extends GetView<OnboardingController> {
             height: 40,
           ),
 
-          // Theme toggle
+          // Theme toggle with better design
           GetBuilder<ThemeController>(
             builder: (themeController) {
-              return IconButton(
-                icon: Icon(
-                  themeController.themeMode == ThemeMode.dark
-                      ? Icons.light_mode
-                      : Icons.dark_mode,
+              return Container(
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surface,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: Theme.of(context).dividerColor,
+                  ),
                 ),
-                onPressed: () {
-                  themeController.updateTheme(
-                    themeController.themeMode == ThemeMode.dark
-                        ? AppThemeEnum.light
-                        : AppThemeEnum.dark,
-                  );
-                },
+                child: IconButton(
+                  icon: Icon(themeController.currentThemeIcon),
+                  onPressed: () => themeController.cycleTheme(),
+                  tooltip: 'Theme: ${themeController.currentThemeName}',
+                  color: Theme.of(context).colorScheme.primary,
+                ),
               );
             },
           ),

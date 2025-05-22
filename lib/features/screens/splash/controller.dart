@@ -3,39 +3,65 @@ part of 'imports.dart';
 
 class SplashController extends GetxController {
   final RxBool isInitialized = false.obs;
-  final RxString initializationMessage = 'Initializing...'.obs;
+  final RxString initializationMessage = 'Welcome'.obs;
   final RxDouble progress = 0.0.obs;
+  final RxBool showLogo = false.obs;
+  final RxBool showTitle = false.obs;
+  final RxBool showTagline = false.obs;
+  final RxBool showProgress = false.obs;
 
   bool _isDisposed = false;
   Timer? _progressTimer;
+  Timer? _animationTimer;
 
   @override
   void onInit() {
     super.onInit();
-    _startInitializationSequence();
+    _startAnimationSequence();
   }
 
-  void _startInitializationSequence() {
+  void _startAnimationSequence() {
     if (_isDisposed) return;
 
-    // Start progress animation
-    _startProgressAnimation();
+    // Staggered animation sequence
+    Timer(const Duration(milliseconds: 200), () {
+      if (!_isDisposed) showLogo.value = true;
+    });
 
-    // Start actual initialization
-    _performInitialization();
+    Timer(const Duration(milliseconds: 800), () {
+      if (!_isDisposed) {
+        showTitle.value = true;
+        initializationMessage.value = 'Money Track';
+      }
+    });
+
+    Timer(const Duration(milliseconds: 1200), () {
+      if (!_isDisposed) {
+        showTagline.value = true;
+        initializationMessage.value = 'Loading services...';
+      }
+    });
+
+    Timer(const Duration(milliseconds: 1600), () {
+      if (!_isDisposed) {
+        showProgress.value = true;
+        _startProgressAnimation();
+        _performInitialization();
+      }
+    });
   }
 
   void _startProgressAnimation() {
     if (_isDisposed) return;
 
-    _progressTimer = Timer.periodic(const Duration(milliseconds: 50), (timer) {
+    _progressTimer = Timer.periodic(const Duration(milliseconds: 30), (timer) {
       if (_isDisposed) {
         timer.cancel();
         return;
       }
 
       if (progress.value < 1.0) {
-        progress.value += 0.02; // Increment progress
+        progress.value += 0.008; // Slower, smoother progress
       } else {
         timer.cancel();
       }
@@ -54,8 +80,8 @@ class SplashController extends GetxController {
       await _verifyServices();
       if (_isDisposed) return;
 
-      // Phase 3: Wait for minimum splash time
-      await _waitForMinimumDuration();
+      // Phase 3: Final preparations
+      await _finalizeInitialization();
       if (_isDisposed) return;
 
       // Phase 4: Navigate to next screen
@@ -73,34 +99,31 @@ class SplashController extends GetxController {
     if (_isDisposed) return;
 
     initializationMessage.value = 'Loading services...';
-
-    // Simulate service initialization
-    await Future.delayed(const Duration(milliseconds: 800));
+    await Future.delayed(const Duration(milliseconds: 1000));
 
     if (_isDisposed) return;
 
-    initializationMessage.value = 'Checking configuration...';
-
-    await Future.delayed(const Duration(milliseconds: 400));
+    initializationMessage.value = 'Configuring app...';
+    await Future.delayed(const Duration(milliseconds: 800));
   }
 
   Future<void> _verifyServices() async {
     if (_isDisposed) return;
 
+    initializationMessage.value = 'Verifying setup...';
+    await Future.delayed(const Duration(milliseconds: 600));
+
+    if (_isDisposed) return;
+
     initializationMessage.value = 'Almost ready...';
-
     await Future.delayed(const Duration(milliseconds: 400));
+  }
 
+  Future<void> _finalizeInitialization() async {
     if (_isDisposed) return;
 
     isInitialized.value = true;
-    initializationMessage.value = 'Ready!';
-  }
-
-  Future<void> _waitForMinimumDuration() async {
-    if (_isDisposed) return;
-
-    // Ensure splash is shown for at least 2 seconds total
+    initializationMessage.value = 'Welcome!';
     await Future.delayed(const Duration(milliseconds: 600));
   }
 
@@ -139,7 +162,6 @@ class SplashController extends GetxController {
 
     } catch (e) {
       Logger.error('Navigation error: $e');
-      // Fallback to home screen
       if (!_isDisposed) {
         Get.offAllNamed(AppRoutes.home);
       }
@@ -151,7 +173,6 @@ class SplashController extends GetxController {
 
     initializationMessage.value = 'Something went wrong...';
 
-    // Navigate to home after error
     Timer(const Duration(seconds: 2), () {
       if (!_isDisposed) {
         Get.offAllNamed(AppRoutes.home);
@@ -162,11 +183,10 @@ class SplashController extends GetxController {
   @override
   void onClose() {
     _isDisposed = true;
-
-    // Cancel progress timer
     _progressTimer?.cancel();
+    _animationTimer?.cancel();
     _progressTimer = null;
-
+    _animationTimer = null;
     super.onClose();
   }
 }

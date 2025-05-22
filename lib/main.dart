@@ -72,6 +72,7 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Listen to system theme changes
     return GetBuilder<ThemeController>(
       builder: (themeController) {
         return GetBuilder<LanguageController>(
@@ -87,16 +88,31 @@ class MyApp extends StatelessWidget {
               debugShowCheckedModeBanner: false,
               initialRoute: AppRoutes.splash,
               getPages: AppPages.routes,
-              builder: (context, child) => MediaQuery(
-                data: MediaQuery.of(context).copyWith(
-                  textScaler: TextScaler.noScaling,
-                  boldText: false,
-                ),
-                child: ScrollConfiguration(
-                  behavior: const ScrollBehavior(),
-                  child: child ?? const Scaffold(),
-                ),
-              ),
+              builder: (context, child) {
+                // Listen to system theme changes and update accordingly
+                final systemBrightness = MediaQuery.of(context).platformBrightness;
+                if (themeController.selectedTheme.value == AppThemeEnum.system) {
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    final newThemeMode = systemBrightness == Brightness.dark
+                        ? ThemeMode.dark
+                        : ThemeMode.light;
+                    if (Get.isDarkMode != (newThemeMode == ThemeMode.dark)) {
+                      Get.changeThemeMode(newThemeMode);
+                    }
+                  });
+                }
+
+                return MediaQuery(
+                  data: MediaQuery.of(context).copyWith(
+                    textScaler: TextScaler.noScaling,
+                    boldText: false,
+                  ),
+                  child: ScrollConfiguration(
+                    behavior: const ScrollBehavior(),
+                    child: child ?? const Scaffold(),
+                  ),
+                );
+              },
               unknownRoute: GetPage(
                 name: '/notfound',
                 page: () => const Scaffold(

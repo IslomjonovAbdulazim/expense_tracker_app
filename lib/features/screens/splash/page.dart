@@ -6,160 +6,329 @@ class SplashPage extends GetView<SplashController> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              context.primary.withOpacity(0.1),
-              context.secondary.withOpacity(0.1),
+    return GetBuilder<ThemeController>(
+      builder: (themeController) {
+        return Scaffold(
+          body: Container(
+            width: double.infinity,
+            height: double.infinity,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  context.primary.withOpacity(0.05),
+                  context.secondary.withOpacity(0.05),
+                  context.primary.withOpacity(0.02),
+                ],
+                stops: const [0.0, 0.5, 1.0],
+              ),
+            ),
+            child: SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                child: Column(
+                  children: [
+                    // Top spacer
+                    const Spacer(flex: 2),
+
+                    // Logo section
+                    _buildLogoSection(context),
+
+                    // Middle spacer
+                    const Spacer(flex: 1),
+
+                    // App name section
+                    _buildAppNameSection(context),
+
+                    // Small spacer
+                    const SizedBox(height: 16),
+
+                    // Tagline section
+                    _buildTaglineSection(context),
+
+                    // Bottom spacer
+                    const Spacer(flex: 2),
+
+                    // Progress section
+                    _buildProgressSection(context),
+
+                    // Bottom padding with theme indicator and test button
+                    Column(
+                      children: [
+                        if (kDebugMode) ...[
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color: context.primary.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  'Theme: ${themeController.themeStatusText}',
+                                  style: context.bodySmall.copyWith(
+                                    color: context.textSecondary,
+                                    fontSize: 10,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                GestureDetector(
+                                  onTap: () => themeController.cycleTheme(),
+                                  child: Container(
+                                    padding: const EdgeInsets.all(4),
+                                    decoration: BoxDecoration(
+                                      color: context.primary.withOpacity(0.2),
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                    child: Icon(
+                                      themeController.currentThemeIcon,
+                                      size: 12,
+                                      color: context.primary,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                        ],
+                        const SizedBox(height: 40),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildLogoSection(BuildContext context) {
+    return Obx(() => AnimatedScale(
+      scale: controller.showLogo.value ? 1.0 : 0.0,
+      duration: const Duration(milliseconds: 1000),
+      curve: Curves.elasticOut,
+      child: AnimatedOpacity(
+        opacity: controller.showLogo.value ? 1.0 : 0.0,
+        duration: const Duration(milliseconds: 800),
+        child: Container(
+          width: 140,
+          height: 140,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            gradient: RadialGradient(
+              colors: [
+                context.primary.withOpacity(0.1),
+                context.primary.withOpacity(0.05),
+                Colors.transparent,
+              ],
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: context.primary.withOpacity(0.1),
+                blurRadius: 30,
+                spreadRadius: 5,
+              ),
             ],
           ),
-        ),
-        child: SafeArea(
-          child: Column(
-            children: [
-              // Logo section
-              Expanded(
-                flex: 3,
-                child: Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      // Logo with subtle scale animation
-                      Obx(() => AnimatedScale(
-                        scale: controller.isInitialized.value ? 1.0 : 0.8,
-                        duration: const Duration(milliseconds: 800),
-                        curve: Curves.elasticOut,
-                        child: Container(
-                          width: 120,
-                          height: 120,
-                          decoration: BoxDecoration(
-                            color: context.primary.withOpacity(0.1),
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Center(
-                            child: AdaptiveLogo(
-                              width: 80,
-                              height: 80,
-                            ),
-                          ),
-                        ),
-                      )),
-                    ],
+          child: Center(
+            child: Container(
+              width: 100,
+              height: 100,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: context.surface,
+                boxShadow: [
+                  BoxShadow(
+                    color: context.primary.withOpacity(0.15),
+                    blurRadius: 20,
+                    offset: const Offset(0, 8),
                   ),
+                ],
+              ),
+              child: const Center(
+                child: AdaptiveLogo(
+                  width: 60,
+                  height: 60,
+                  showText: true,
                 ),
               ),
-
-              // App name and tagline
-              Expanded(
-                flex: 2,
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    // App name with fade animation
-                    Obx(() => AnimatedOpacity(
-                      opacity: controller.progress.value > 0.3 ? 1.0 : 0.0,
-                      duration: const Duration(milliseconds: 600),
-                      child: Text(
-                        'Money Track',
-                        style: context.headingLarge.copyWith(
-                          color: context.primary,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: 1.2,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    )),
-
-                    const SizedBox(height: 12),
-
-                    // Tagline with slide animation
-                    Obx(() => AnimatedSlide(
-                      offset: controller.progress.value > 0.6
-                          ? Offset.zero
-                          : const Offset(0, 0.5),
-                      duration: const Duration(milliseconds: 600),
-                      child: AnimatedOpacity(
-                        opacity: controller.progress.value > 0.6 ? 1.0 : 0.0,
-                        duration: const Duration(milliseconds: 600),
-                        child: Text(
-                          'Track your expenses smartly',
-                          style: context.bodyLarge.copyWith(
-                            color: context.textSecondary,
-                            fontWeight: FontWeight.w400,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                    )),
-                  ],
-                ),
-              ),
-
-              // Progress section
-              Expanded(
-                flex: 1,
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    // Status message
-                    Obx(() => AnimatedSwitcher(
-                      duration: const Duration(milliseconds: 300),
-                      child: Text(
-                        controller.initializationMessage.value,
-                        key: ValueKey(controller.initializationMessage.value),
-                        style: context.bodyMedium.copyWith(
-                          color: context.textSecondary,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    )),
-
-                    const SizedBox(height: 24),
-
-                    // Progress indicator
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 60),
-                      child: Column(
-                        children: [
-                          // Linear progress bar
-                          Obx(() => LinearProgressIndicator(
-                            value: controller.progress.value,
-                            backgroundColor: context.primary.withOpacity(0.2),
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              context.primary,
-                            ),
-                            minHeight: 4,
-                          )),
-
-                          const SizedBox(height: 16),
-
-                          // Circular loading indicator
-                          SizedBox(
-                            width: 32,
-                            height: 32,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 3,
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                context.primary,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    const SizedBox(height: 40),
-                  ],
-                ),
-              ),
-            ],
+            ),
           ),
         ),
       ),
-    );
+    ));
+  }
+
+  Widget _buildAppNameSection(BuildContext context) {
+    return Obx(() => AnimatedSlide(
+      offset: controller.showTitle.value ? Offset.zero : const Offset(0, 0.3),
+      duration: const Duration(milliseconds: 800),
+      curve: Curves.easeOutCubic,
+      child: AnimatedOpacity(
+        opacity: controller.showTitle.value ? 1.0 : 0.0,
+        duration: const Duration(milliseconds: 800),
+        child: AnimatedScale(
+          scale: controller.showTitle.value ? 1.0 : 0.8,
+          duration: const Duration(milliseconds: 800),
+          curve: Curves.easeOutCubic,
+          child: Text(
+            'Money Track',
+            style: context.headingLarge.copyWith(
+              color: context.primary,
+              fontWeight: FontWeight.w900,
+              letterSpacing: 2.0,
+              fontSize: 32,
+              shadows: [
+                Shadow(
+                  color: context.primary.withOpacity(0.3),
+                  blurRadius: 10,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ),
+      ),
+    ));
+  }
+
+  Widget _buildTaglineSection(BuildContext context) {
+    return Obx(() => AnimatedSlide(
+      offset: controller.showTagline.value ? Offset.zero : const Offset(0, 0.5),
+      duration: const Duration(milliseconds: 1000),
+      curve: Curves.easeOutCubic,
+      child: AnimatedOpacity(
+        opacity: controller.showTagline.value ? 1.0 : 0.0,
+        duration: const Duration(milliseconds: 1000),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Text(
+            'Track your expenses smartly',
+            style: context.bodyLarge.copyWith(
+              color: context.textSecondary,
+              fontWeight: FontWeight.w400,
+              fontSize: 16,
+              height: 1.4,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ),
+      ),
+    ));
+  }
+
+  Widget _buildProgressSection(BuildContext context) {
+    return Obx(() => AnimatedSlide(
+      offset: controller.showProgress.value ? Offset.zero : const Offset(0, 1.0),
+      duration: const Duration(milliseconds: 600),
+      curve: Curves.easeOutCubic,
+      child: AnimatedOpacity(
+        opacity: controller.showProgress.value ? 1.0 : 0.0,
+        duration: const Duration(milliseconds: 600),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Status message
+            SizedBox(
+              height: 24,
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 400),
+                transitionBuilder: (child, animation) {
+                  return FadeTransition(
+                    opacity: animation,
+                    child: SlideTransition(
+                      position: Tween<Offset>(
+                        begin: const Offset(0, 0.3),
+                        end: Offset.zero,
+                      ).animate(CurvedAnimation(
+                        parent: animation,
+                        curve: Curves.easeOut,
+                      )),
+                      child: child,
+                    ),
+                  );
+                },
+                child: Text(
+                  controller.initializationMessage.value,
+                  key: ValueKey(controller.initializationMessage.value),
+                  style: context.bodyMedium.copyWith(
+                    color: context.textSecondary,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 32),
+
+            // Progress indicators container
+            Container(
+              constraints: const BoxConstraints(maxWidth: 280),
+              child: Column(
+                children: [
+                  // Linear progress bar with glow effect
+                  Container(
+                    height: 6,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(3),
+                      boxShadow: [
+                        BoxShadow(
+                          color: context.primary.withOpacity(0.3),
+                          blurRadius: 8,
+                          spreadRadius: 1,
+                        ),
+                      ],
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(3),
+                      child: LinearProgressIndicator(
+                        value: controller.progress.value,
+                        backgroundColor: context.primary.withOpacity(0.1),
+                        valueColor: AlwaysStoppedAnimation<Color>(context.primary),
+                        minHeight: 6,
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  // Circular loading indicator with pulse effect
+                  AnimatedContainer(
+                    duration: const Duration(seconds: 2),
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: context.primary.withOpacity(0.3),
+                          blurRadius: 15,
+                          spreadRadius: 3,
+                        ),
+                      ],
+                    ),
+                    child: CircularProgressIndicator(
+                      strokeWidth: 3,
+                      valueColor: AlwaysStoppedAnimation<Color>(context.primary),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    ));
   }
 }
