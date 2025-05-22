@@ -1,3 +1,4 @@
+import 'package:expense_tracker_app/shared/adaptive_logo.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:get/get.dart';
