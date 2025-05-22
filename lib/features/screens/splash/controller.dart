@@ -266,6 +266,7 @@ class SplashController extends GetxController {
 
     try {
       final storage = GetStorage();
+      // storage.erase();
 
       // Check onboarding status
       final hasCompletedOnboarding = storage.read(StorageKeys.hasCompletedOnboarding) ?? false;
