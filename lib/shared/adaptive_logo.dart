@@ -11,12 +11,12 @@ class AdaptiveLogo extends StatelessWidget {
   final bool showText;
 
   const AdaptiveLogo({
-    Key? key,
+    super.key,
     this.width,
     this.height,
     this.fit = BoxFit.contain,
     this.showText = false,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -24,9 +24,7 @@ class AdaptiveLogo extends StatelessWidget {
     final brightness = Theme.of(context).brightness;
 
     // Choose logo based on theme
-    final logoPath = brightness == Brightness.dark
-        ? BrandConstants.logoDark
-        : BrandConstants.logoLight;
+    final logoPath = BrandConstants.logo;
 
     // Try to load image, fallback to text if image fails
     return Image.asset(

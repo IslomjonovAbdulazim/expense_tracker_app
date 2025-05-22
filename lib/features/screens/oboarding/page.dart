@@ -60,7 +60,8 @@ class OnboardingPage extends GetView<OnboardingController> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           // App logo
-          AdaptiveLogo(
+          Image.asset(
+            'assets/brand/logo.png',
             height: 40,
           ),
 
