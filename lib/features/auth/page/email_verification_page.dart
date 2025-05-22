@@ -1,4 +1,4 @@
-// lib/features/auth/page/forgot_password_page.dart
+// lib/features/auth/page/email_verification_page.dart
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -6,14 +6,14 @@ import '../../../utils/extenstions/color_extension.dart';
 import '../../../utils/extenstions/text_style_extention.dart';
 import '../controller/auth_controller.dart';
 
-class ForgotPasswordPage extends GetView<AuthController> {
-  const ForgotPasswordPage({super.key});
+class EmailVerificationPage extends GetView<AuthController> {
+  const EmailVerificationPage({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Reset Password'),
+        title: const Text('Email Verification'),
         backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: true,
@@ -23,7 +23,7 @@ class ForgotPasswordPage extends GetView<AuthController> {
           // Dismiss keyboard when tapping outside inputs
           onTap: () => FocusScope.of(context).unfocus(),
           child: SingleChildScrollView(
-            // Make the whole content scrollable when keyboard appears
+            // Make everything scrollable when keyboard appears
             physics: const BouncingScrollPhysics(),
             padding: const EdgeInsets.all(24.0),
             child: ConstrainedBox(
@@ -40,8 +40,8 @@ class ForgotPasswordPage extends GetView<AuthController> {
                 children: [
                   const SizedBox(height: 20),
 
-                  // Illustration
-                  _buildIllustration(context),
+                  // Email illustration
+                  _buildEmailIllustration(context),
 
                   const SizedBox(height: 32),
 
@@ -50,18 +50,18 @@ class ForgotPasswordPage extends GetView<AuthController> {
 
                   const SizedBox(height: 32),
 
-                  // Email form
-                  _buildEmailForm(context),
+                  // Resend button
+                  _buildResendButton(context),
 
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 16),
 
-                  // Reset button
-                  _buildResetButton(context),
+                  // Check email app button
+                  _buildOpenEmailButton(context),
 
                   const SizedBox(height: 32),
 
-                  // Back to login
-                  _buildBackToLogin(context),
+                  // Logout option
+                  _buildLogoutButton(context),
 
                   const SizedBox(height: 20),
                 ],
@@ -73,7 +73,7 @@ class ForgotPasswordPage extends GetView<AuthController> {
     );
   }
 
-  Widget _buildIllustration(BuildContext context) {
+  Widget _buildEmailIllustration(BuildContext context) {
     return Container(
       width: 120,
       height: 120,
@@ -90,7 +90,7 @@ class ForgotPasswordPage extends GetView<AuthController> {
       ),
       child: Center(
         child: Icon(
-          Icons.lock_reset,
+          Icons.mark_email_read_outlined,
           size: 60,
           color: context.primary,
         ),
@@ -99,10 +99,12 @@ class ForgotPasswordPage extends GetView<AuthController> {
   }
 
   Widget _buildHeader(BuildContext context) {
+    final email = controller.currentUser?.email ?? 'your email';
+
     return Column(
       children: [
         Text(
-          'Forgot Password?',
+          'Verify Your Email',
           style: context.headingLarge.copyWith(
             color: context.primary,
             fontWeight: FontWeight.bold,
@@ -111,7 +113,24 @@ class ForgotPasswordPage extends GetView<AuthController> {
         ),
         const SizedBox(height: 12),
         Text(
-          'Don\'t worry! Enter your email address and we\'ll send you instructions to reset your password.',
+          'We\'ve sent a verification link to',
+          style: context.bodyMedium.copyWith(
+            color: context.textSecondary,
+          ),
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 4),
+        Text(
+          email,
+          style: context.bodyLarge.copyWith(
+            color: context.primary,
+            fontWeight: FontWeight.w600,
+          ),
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 12),
+        Text(
+          'Please check your email and click the verification link to complete your account setup.',
           style: context.bodyMedium.copyWith(
             color: context.textSecondary,
             height: 1.5,
@@ -122,45 +141,54 @@ class ForgotPasswordPage extends GetView<AuthController> {
     );
   }
 
-  Widget _buildEmailForm(BuildContext context) {
-    return Form(
-      key: controller.resetPasswordFormKey,
-      child: TextFormField(
-        controller: controller.resetEmailController,
-        keyboardType: TextInputType.emailAddress,
-        decoration: InputDecoration(
-          labelText: 'Email Address',
-          hintText: 'Enter your registered email',
-          prefixIcon: Icon(Icons.email_outlined, color: context.textSecondary),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: context.dividerColor),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: context.primary, width: 2),
-          ),
-          errorBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: context.error),
-          ),
-          filled: true,
-          fillColor: context.cardColor,
-        ),
-        validator: controller.validateEmail,
-      ),
-    );
-  }
-
-  Widget _buildResetButton(BuildContext context) {
+  Widget _buildResendButton(BuildContext context) {
     return Obx(() => SizedBox(
       width: double.infinity,
       height: 56,
-      child: ElevatedButton(
-        onPressed: controller.isLoading.value ? null : controller.resetPassword,
+      child: OutlinedButton(
+        onPressed: controller.isLoading.value ? null : controller.resendVerificationEmail,
+        style: OutlinedButton.styleFrom(
+          side: BorderSide(color: context.primary),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+        child: controller.isLoading.value
+            ? SizedBox(
+          width: 24,
+          height: 24,
+          child: CircularProgressIndicator(
+            strokeWidth: 2,
+            color: context.primary,
+          ),
+        )
+            : Text(
+          'Resend Verification Email',
+          style: context.bodyLarge.copyWith(
+            color: context.primary,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ),
+    ));
+  }
+
+  Widget _buildOpenEmailButton(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      height: 56,
+      child: ElevatedButton.icon(
+        onPressed: () {
+          // This would normally use url_launcher to open email app
+          // Since we don't have that dependency, just show a snackbar
+          Get.snackbar(
+            'Open Email',
+            'This would open your email app in a real implementation',
+            snackPosition: SnackPosition.BOTTOM,
+          );
+        },
+        icon: const Icon(Icons.email_outlined),
+        label: const Text('Open Email App'),
         style: ElevatedButton.styleFrom(
           backgroundColor: context.primary,
           foregroundColor: Colors.white,
@@ -169,39 +197,22 @@ class ForgotPasswordPage extends GetView<AuthController> {
           ),
           elevation: 2,
         ),
-        child: controller.isLoading.value
-            ? SizedBox(
-          width: 24,
-          height: 24,
-          child: CircularProgressIndicator(
-            strokeWidth: 2,
-            color: Colors.white,
-          ),
-        )
-            : Text(
-          'Send Reset Link',
-          style: context.bodyLarge.copyWith(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
       ),
-    ));
+    );
   }
 
-  Widget _buildBackToLogin(BuildContext context) {
+  Widget _buildLogoutButton(BuildContext context) {
     return TextButton.icon(
-      onPressed: () => Get.back(),
+      onPressed: controller.logout,
       icon: Icon(
-        Icons.arrow_back,
+        Icons.logout,
         size: 16,
-        color: context.primary,
+        color: context.textSecondary,
       ),
       label: Text(
-        'Back to Sign In',
+        'Sign Out',
         style: context.bodyMedium.copyWith(
-          color: context.primary,
-          fontWeight: FontWeight.w600,
+          color: context.textSecondary,
         ),
       ),
     );

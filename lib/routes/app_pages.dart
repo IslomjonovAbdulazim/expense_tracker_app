@@ -7,6 +7,7 @@ import 'package:expense_tracker_app/features/screens/oboarding/imports.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart';
 
+import '../features/auth/page/email_verification_page.dart';
 import '../features/home/imports.dart';
 import '../features/screens/language/imports.dart';
 import '../features/screens/offline/imports.dart';

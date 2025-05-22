@@ -2,12 +2,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
-import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'dart:io';
 
-import '../../../shared/widgets/textfield_components.dart';
-import '../../../shared/widgets/platform_buttons.dart';
-import '../../../shared/adaptive_logo.dart';
+import '../../../routes/app_routes.dart';
 import '../../../utils/extenstions/color_extension.dart';
 import '../../../utils/extenstions/text_style_extention.dart';
 import '../controller/auth_controller.dart';
@@ -25,34 +22,50 @@ class AuthPage extends GetView<AuthController> {
             return _buildServiceLoadingScreen(context);
           }
 
-          return SingleChildScrollView(
-            padding: const EdgeInsets.all(24.0),
-            child: Column(
-              children: [
-                const SizedBox(height: 40),
+          return GestureDetector(
+            // Dismiss keyboard when tapping outside inputs
+            onTap: () => FocusScope.of(context).unfocus(),
+            child: SingleChildScrollView(
+              // Make everything scrollable when keyboard appears
+              physics: const BouncingScrollPhysics(),
+              padding: const EdgeInsets.all(24.0),
+              child: ConstrainedBox(
+                // Ensure minimum height even when scrolling
+                constraints: BoxConstraints(
+                  minHeight: MediaQuery.of(context).size.height -
+                      MediaQuery.of(context).padding.top -
+                      MediaQuery.of(context).padding.bottom - 48,
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const SizedBox(height: 20),
 
-                // Logo and branding
-                _buildHeader(context),
+                    // Logo and branding
+                    _buildHeader(context),
 
-                const SizedBox(height: 48),
+                    const SizedBox(height: 48),
 
-                // Auth form
-                Obx(() => controller.isLoginMode.value
-                    ? _buildLoginForm(context)
-                    : _buildRegisterForm(context)),
+                    // Auth form
+                    Obx(() => controller.isLoginMode.value
+                        ? _buildLoginForm(context)
+                        : _buildRegisterForm(context)),
 
-                const SizedBox(height: 32),
+                    const SizedBox(height: 32),
 
-                // Social auth buttons
-                _buildSocialAuthSection(context),
+                    // Social auth buttons
+                    _buildSocialAuthSection(context),
 
-                const SizedBox(height: 32),
+                    const SizedBox(height: 32),
 
-                // Toggle auth mode
-                _buildToggleSection(context),
+                    // Toggle auth mode
+                    _buildToggleSection(context),
 
-                const SizedBox(height: 20),
-              ],
+                    const SizedBox(height: 20),
+                  ],
+                ),
+              ),
             ),
           );
         }),
@@ -65,10 +78,6 @@ class AuthPage extends GetView<AuthController> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const AdaptiveLogo(
-            width: 80,
-            height: 80,
-          ),
           const SizedBox(height: 32),
           CircularProgressIndicator(
             color: context.primary,
@@ -101,10 +110,19 @@ class AuthPage extends GetView<AuthController> {
   Widget _buildHeader(BuildContext context) {
     return Column(
       children: [
-        const AdaptiveLogo(
+        Container(
           width: 80,
           height: 80,
-          showText: true,
+          decoration: BoxDecoration(
+            color: context.primary.withOpacity(0.1),
+            shape: BoxShape.circle,
+            border: Border.all(color: context.primary.withOpacity(0.5), width: 2),
+          ),
+          child: Icon(
+            Icons.account_balance_wallet,
+            size: 40,
+            color: context.primary,
+          ),
         ),
         const SizedBox(height: 24),
         Obx(() => Text(
@@ -134,23 +152,30 @@ class AuthPage extends GetView<AuthController> {
       key: controller.loginFormKey,
       child: Column(
         children: [
-          FormFieldWrapper(
-            child: EmailTextField(
-              controller: controller.emailController,
-              focusNode: controller.emailFocusNode,
-              validator: controller.validateEmail,
-              onChanged: (value) {},
-            ),
+          // Email Field
+          _buildTextField(
+            context: context,
+            controller: controller.emailController,
+            focusNode: controller.emailFocusNode,
+            label: 'Email',
+            hint: 'Enter your email address',
+            prefixIcon: Icons.email_outlined,
+            keyboardType: TextInputType.emailAddress,
+            validator: controller.validateEmail,
           ),
 
-          FormFieldWrapper(
-            child: PasswordTextField(
-              controller: controller.passwordController,
-              focusNode: controller.passwordFocusNode,
-              validator: controller.validatePassword,
-              onChanged: (value) {},
-              textInputAction: TextInputAction.done,
-            ),
+          const SizedBox(height: 16),
+
+          // Password Field
+          _buildTextField(
+            context: context,
+            controller: controller.passwordController,
+            focusNode: controller.passwordFocusNode,
+            label: 'Password',
+            hint: 'Enter your password',
+            prefixIcon: Icons.lock_outlined,
+            obscureText: true,
+            validator: controller.validatePassword,
           ),
 
           // Forgot password link
@@ -171,12 +196,11 @@ class AuthPage extends GetView<AuthController> {
           const SizedBox(height: 24),
 
           // Login button
-          Obx(() => PlatformButton.primary(
+          Obx(() => _buildPrimaryButton(
+            context: context,
             text: controller.primaryButtonText,
             onPressed: controller.isLoading.value ? null : controller.loginWithEmail,
             isLoading: controller.isLoading.value,
-            expanded: true,
-            height: 56,
           )),
         ],
       ),
@@ -188,54 +212,71 @@ class AuthPage extends GetView<AuthController> {
       key: controller.registerFormKey,
       child: Column(
         children: [
-          FormFieldWrapper(
-            child: NameTextField(
-              controller: controller.nameController,
-              focusNode: controller.nameFocusNode,
-              validator: controller.validateName,
-              onChanged: (value) {},
-            ),
+          // Name Field
+          _buildTextField(
+            context: context,
+            controller: controller.nameController,
+            focusNode: controller.nameFocusNode,
+            label: 'Full Name',
+            hint: 'Enter your full name',
+            prefixIcon: Icons.person_outlined,
+            validator: controller.validateName,
           ),
 
-          FormFieldWrapper(
-            child: EmailTextField(
-              controller: controller.emailController,
-              focusNode: controller.emailFocusNode,
-              validator: controller.validateEmail,
-              onChanged: (value) {},
-            ),
+          const SizedBox(height: 16),
+
+          // Email Field
+          _buildTextField(
+            context: context,
+            controller: controller.emailController,
+            focusNode: controller.emailFocusNode,
+            label: 'Email',
+            hint: 'Enter your email address',
+            prefixIcon: Icons.email_outlined,
+            keyboardType: TextInputType.emailAddress,
+            validator: controller.validateEmail,
           ),
 
-          FormFieldWrapper(
-            child: PhoneTextField(
-              controller: controller.phoneController,
-              focusNode: controller.phoneFocusNode,
-              validator: controller.validatePhone,
-              onChanged: (value) {},
-            ),
+          const SizedBox(height: 16),
+
+          // Phone Field
+          _buildTextField(
+            context: context,
+            controller: controller.phoneController,
+            focusNode: controller.phoneFocusNode,
+            label: 'Phone Number',
+            hint: 'Enter your phone number',
+            prefixIcon: Icons.phone_outlined,
+            keyboardType: TextInputType.phone,
+            validator: controller.validatePhone,
           ),
 
-          FormFieldWrapper(
-            child: PasswordTextField(
-              controller: controller.passwordController,
-              focusNode: controller.passwordFocusNode,
-              validator: controller.validatePassword,
-              onChanged: (value) {},
-              isNewPassword: true,
-              textInputAction: TextInputAction.next,
-            ),
+          const SizedBox(height: 16),
+
+          // Password Field
+          _buildTextField(
+            context: context,
+            controller: controller.passwordController,
+            focusNode: controller.passwordFocusNode,
+            label: 'Password',
+            hint: 'Enter your password',
+            prefixIcon: Icons.lock_outlined,
+            obscureText: true,
+            validator: controller.validatePassword,
           ),
 
-          FormFieldWrapper(
-            child: PasswordTextField(
-              label: 'Confirm Password',
-              hint: 'Confirm your password',
-              controller: controller.confirmPasswordController,
-              focusNode: controller.confirmPasswordFocusNode,
-              validator: controller.validateConfirmPassword,
-              onChanged: (value) {},
-              textInputAction: TextInputAction.done,
-            ),
+          const SizedBox(height: 16),
+
+          // Confirm Password Field
+          _buildTextField(
+            context: context,
+            controller: controller.confirmPasswordController,
+            focusNode: controller.confirmPasswordFocusNode,
+            label: 'Confirm Password',
+            hint: 'Confirm your password',
+            prefixIcon: Icons.lock_outlined,
+            obscureText: true,
+            validator: controller.validateConfirmPassword,
           ),
 
           // Terms and conditions
@@ -244,7 +285,9 @@ class AuthPage extends GetView<AuthController> {
             onChanged: (value) => controller.acceptTerms.value = value ?? false,
             title: RichText(
               text: TextSpan(
-                style: context.bodySmall,
+                style: context.bodySmall.copyWith(
+                  color: context.textPrimary,
+                ),
                 children: [
                   const TextSpan(text: 'I agree to the '),
                   TextSpan(
@@ -273,12 +316,11 @@ class AuthPage extends GetView<AuthController> {
           const SizedBox(height: 24),
 
           // Register button
-          Obx(() => PlatformButton.primary(
+          Obx(() => _buildPrimaryButton(
+            context: context,
             text: controller.primaryButtonText,
             onPressed: controller.isLoading.value ? null : controller.registerWithEmail,
             isLoading: controller.isLoading.value,
-            expanded: true,
-            height: 56,
           )),
         ],
       ),
@@ -316,92 +358,32 @@ class AuthPage extends GetView<AuthController> {
           Column(
             children: [
               // Google Sign In
-              PlatformButton.secondary(
+              _buildSocialButton(
+                context: context,
                 text: '${controller.socialButtonPrefix} with Google',
                 icon: _buildGoogleIcon(),
                 onPressed: isDisabled ? null : controller.signInWithGoogle,
-                expanded: true,
-                height: 56,
               ),
 
               const SizedBox(height: 12),
 
               // Apple Sign In (iOS only)
               if (Platform.isIOS)
-                _buildAppleSignInButton(context, isDisabled),
+                _buildSocialButton(
+                  context: context,
+                  text: '${controller.socialButtonPrefix} with Apple',
+                  icon: Icon(
+                    Icons.apple,
+                    color: context.textPrimary,
+                  ),
+                  onPressed: isDisabled ? null : controller.signInWithApple,
+                  isPrimary: false,
+                ),
             ],
           ),
         ],
       );
     });
-  }
-
-  Widget _buildAppleSignInButton(BuildContext context, bool isDisabled) {
-    if (isDisabled) {
-      // Show disabled Apple button
-      return Container(
-        width: double.infinity,
-        height: 56,
-        decoration: BoxDecoration(
-          color: Colors.grey.withOpacity(0.3),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey.withOpacity(0.5)),
-        ),
-        child: Center(
-          child: Text(
-            '${controller.socialButtonPrefix} with Apple',
-            style: context.bodyMedium.copyWith(
-              color: Colors.grey,
-            ),
-          ),
-        ),
-      );
-    }
-
-    return Container(
-      width: double.infinity,
-      height: 56,
-      child: SignInWithAppleButton(
-        onPressed: controller.signInWithApple,
-        style: Get.isDarkMode
-            ? SignInWithAppleButtonStyle.white
-            : SignInWithAppleButtonStyle.black,
-        borderRadius: BorderRadius.circular(12),
-        text: controller.isLoginMode.value ? 'Sign in with Apple' : 'Sign up with Apple',
-      ),
-    );
-  }
-
-  Widget _buildGoogleIcon() {
-    // Create a simple Google icon using Container
-    return Container(
-      width: 20,
-      height: 20,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        gradient: LinearGradient(
-          colors: [
-            Colors.red,
-            Colors.orange,
-            Colors.yellow,
-            Colors.green,
-            Colors.blue,
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-      ),
-      child: Center(
-        child: Text(
-          'G',
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-            fontSize: 12,
-          ),
-        ),
-      ),
-    );
   }
 
   Widget _buildToggleSection(BuildContext context) {
@@ -456,6 +438,147 @@ class AuthPage extends GetView<AuthController> {
           return const SizedBox.shrink();
         }),
       ],
+    );
+  }
+
+  Widget _buildTextField({
+    required BuildContext context,
+    required TextEditingController controller,
+    required FocusNode focusNode,
+    required String label,
+    required String hint,
+    required IconData prefixIcon,
+    TextInputType? keyboardType,
+    bool obscureText = false,
+    String? Function(String?)? validator,
+  }) {
+    return TextFormField(
+      controller: controller,
+      focusNode: focusNode,
+      obscureText: obscureText,
+      keyboardType: keyboardType,
+      validator: validator,
+      decoration: InputDecoration(
+        labelText: label,
+        hintText: hint,
+        prefixIcon: Icon(prefixIcon, color: context.textSecondary),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: context.dividerColor),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: context.dividerColor),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: context.primary, width: 2),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: context.error),
+        ),
+        filled: true,
+        fillColor: context.cardColor,
+      ),
+      style: context.bodyLarge,
+    );
+  }
+
+  Widget _buildPrimaryButton({
+    required BuildContext context,
+    required String text,
+    required VoidCallback? onPressed,
+    bool isLoading = false,
+  }) {
+    return SizedBox(
+      width: double.infinity,
+      height: 56,
+      child: ElevatedButton(
+        onPressed: onPressed,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: context.primary,
+          foregroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          elevation: 2,
+        ),
+        child: isLoading
+            ? SizedBox(
+          width: 24,
+          height: 24,
+          child: CircularProgressIndicator(
+            strokeWidth: 2,
+            color: Colors.white,
+          ),
+        )
+            : Text(
+          text,
+          style: context.bodyLarge.copyWith(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSocialButton({
+    required BuildContext context,
+    required String text,
+    required Widget icon,
+    required VoidCallback? onPressed,
+    bool isPrimary = true,
+  }) {
+    return SizedBox(
+      width: double.infinity,
+      height: 56,
+      child: OutlinedButton.icon(
+        onPressed: onPressed,
+        icon: icon,
+        label: Text(text),
+        style: OutlinedButton.styleFrom(
+          foregroundColor: isPrimary ? context.primary : context.textPrimary,
+          side: BorderSide(color: context.dividerColor),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGoogleIcon() {
+    // Create a simple Google icon
+    return Container(
+      width: 20,
+      height: 20,
+      decoration: const BoxDecoration(
+        shape: BoxShape.circle,
+        gradient: LinearGradient(
+          colors: [
+            Colors.red,
+            Colors.orange,
+            Colors.yellow,
+            Colors.green,
+            Colors.blue,
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+      ),
+      child: const Center(
+        child: Text(
+          'G',
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+            fontSize: 12,
+          ),
+        ),
+      ),
     );
   }
 }
