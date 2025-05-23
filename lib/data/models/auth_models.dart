@@ -1,4 +1,4 @@
-// lib/core/auth/models/auth_models.dart
+// lib/data/models/auth_models.dart
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 part 'auth_models.freezed.dart';
@@ -51,13 +51,14 @@ class LoginRequest with _$LoginRequest {
       _$LoginRequestFromJson(json);
 }
 
-/// Register request model
+/// Register request model - phoneNumber is now truly optional
 @freezed
 class RegisterRequest with _$RegisterRequest {
   const factory RegisterRequest({
     required String email,
     required String password,
     required String name,
+    // phoneNumber is optional and defaults to null
     String? phoneNumber,
   }) = _RegisterRequest;
 

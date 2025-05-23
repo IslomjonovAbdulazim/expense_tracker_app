@@ -239,19 +239,7 @@ class AuthPage extends GetView<AuthController> {
 
           const SizedBox(height: 16),
 
-          // Phone Field
-          _buildTextField(
-            context: context,
-            controller: controller.phoneController,
-            focusNode: controller.phoneFocusNode,
-            label: 'Phone Number',
-            hint: 'Enter your phone number',
-            prefixIcon: Icons.phone_outlined,
-            keyboardType: TextInputType.phone,
-            validator: controller.validatePhone,
-          ),
-
-          const SizedBox(height: 16),
+          // REMOVED: Phone Field - completely removed from here
 
           // Password Field
           _buildTextField(

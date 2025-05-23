@@ -15,20 +15,18 @@ class AuthController extends GetxController {
   final registerFormKey = GlobalKey<FormState>();
   final resetPasswordFormKey = GlobalKey<FormState>();
 
-  // Text controllers
+  // Text controllers (removed phoneController)
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
   final confirmPasswordController = TextEditingController();
   final nameController = TextEditingController();
-  final phoneController = TextEditingController();
   final resetEmailController = TextEditingController();
 
-  // Focus nodes
+  // Focus nodes (removed phoneFocusNode)
   final emailFocusNode = FocusNode();
   final passwordFocusNode = FocusNode();
   final confirmPasswordFocusNode = FocusNode();
   final nameFocusNode = FocusNode();
-  final phoneFocusNode = FocusNode();
 
   // Observable states
   final isLoading = false.obs;
@@ -121,19 +119,17 @@ class AuthController extends GetxController {
 
   @override
   void onClose() {
-    // Dispose controllers and focus nodes
+    // Dispose controllers and focus nodes (removed phone-related ones)
     emailController.dispose();
     passwordController.dispose();
     confirmPasswordController.dispose();
     nameController.dispose();
-    phoneController.dispose();
     resetEmailController.dispose();
 
     emailFocusNode.dispose();
     passwordFocusNode.dispose();
     confirmPasswordFocusNode.dispose();
     nameFocusNode.dispose();
-    phoneFocusNode.dispose();
 
     super.onClose();
   }
@@ -165,7 +161,6 @@ class AuthController extends GetxController {
     passwordController.clear();
     confirmPasswordController.clear();
     nameController.clear();
-    phoneController.clear();
     resetEmailController.clear();
     acceptTerms.value = false;
   }
@@ -229,7 +224,7 @@ class AuthController extends GetxController {
     }
   }
 
-  // Register with email/password
+  // Register with email/password (removed phone number)
   Future<void> registerWithEmail() async {
     if (!_checkServiceReady()) return;
     if (!registerFormKey.currentState!.validate()) return;
@@ -245,14 +240,12 @@ class AuthController extends GetxController {
       // Simulating network delay for demo purposes
       await Future.delayed(const Duration(seconds: 2));
 
-      // Create register request
+      // Create register request without phone number
       final request = RegisterRequest(
         email: emailController.text.trim(),
         password: passwordController.text,
         name: nameController.text.trim(),
-        phoneNumber: phoneController.text.trim().isNotEmpty
-            ? phoneController.text.trim()
-            : null,
+        // phoneNumber: null, // Removed phone number completely
       );
 
       // Check if AuthService is properly initialized
@@ -473,20 +466,7 @@ class AuthController extends GetxController {
     return null;
   }
 
-  String? validatePhone(String? value) {
-    // Phone is optional
-    if (value == null || value.trim().isEmpty) {
-      return null;
-    }
-
-    // Remove non-digit characters and validate
-    final cleanedPhone = value.replaceAll(RegExp(r'[^\d]'), '');
-    if (cleanedPhone.length != 9) {
-      return 'Phone number must be 9 digits';
-    }
-
-    return null;
-  }
+  // Removed validatePhone method since phone is no longer used
 
   // Navigation helpers
   void goToRegister() {
