@@ -263,7 +263,6 @@ class SplashController extends GetxController {
 
     try {
       final storage = GetStorage();
-      // storage.erase(); // todo
 
       // Check if this is a fresh install or reset
       final hasCompletedPreferences = storage.read(StorageKeys.hasCompletedPreferences) ?? false;
