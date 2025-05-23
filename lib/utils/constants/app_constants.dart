@@ -41,8 +41,24 @@ class StorageKeys {
   static const String cachedTransactions = "cached_transactions";
 }
 
+// Add this to the end of lib/utils/constants/app_constants.dart
+
+/// Development constants for feature flags and debugging
 class DevConstants {
+  DevConstants._();  // Private constructor
+
+  // Authentication & Security
   static const bool enableAuthMiddleware = false; // Set to false for UI development
+  static const bool enablePinProtection = false; // Disable PIN for development
+  static const bool enableBiometrics = false; // Disable biometrics for development
+
+  // Network & API
+  static const bool enableNetworkLogs = true; // Show network logs in debug
+  static const bool enableMockData = true; // Use mock data instead of API calls
+  // Features
+  static const bool enablePremiumFeatures = true; // Enable all premium features
+  static const bool enableBetaFeatures = true; // Enable beta features
+  static const bool enableAnalytics = false; // Disable analytics for development
 }
 
 /// Timeout value constants

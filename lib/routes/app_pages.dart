@@ -14,6 +14,7 @@ import '../features/screens/splash/imports.dart';
 import '../features/setup/currency_setup/imports.dart';
 import '../features/setup/language_setup/imports.dart';
 import '../features/setup/theme_setup/imports.dart';
+import '../utils/constants/app_constants.dart'; // Import for DevConstants
 import 'app_routes.dart';
 
 class AppPages {
@@ -121,12 +122,12 @@ class AppPages {
       curve: Curves.easeInOut,
     ),
 
-    // Protected routes with auth middleware
+    // Protected routes with conditional auth middleware
     GetPage(
       name: AppRoutes.home,
       page: () => const HomePage(),
       binding: HomeBinding(),
-      middlewares: [AuthMiddleware()],
+      middlewares: DevConstants.enableAuthMiddleware ? [AuthMiddleware()] : [],
       transition: Transition.cupertino,
       transitionDuration: const Duration(milliseconds: 350),
       curve: Curves.easeInOut,
@@ -136,7 +137,7 @@ class AppPages {
       name: AppRoutes.admin,
       page: () => const HomePage(),
       binding: HomeBinding(),
-      middlewares: [AuthMiddleware()],
+      middlewares: DevConstants.enableAuthMiddleware ? [AuthMiddleware()] : [],
       transition: Transition.cupertino,
       transitionDuration: const Duration(milliseconds: 350),
       curve: Curves.easeInOut,
@@ -144,9 +145,10 @@ class AppPages {
 
     GetPage(
       name: AppRoutes.transactions,
-      page: () => const HomePage(), // Replace with actual transactions page
+      page: () => const HomePage(),
+      // Replace with actual transactions page
       binding: HomeBinding(),
-      middlewares: [AuthMiddleware()],
+      middlewares: DevConstants.enableAuthMiddleware ? [AuthMiddleware()] : [],
       transition: Transition.rightToLeft,
       transitionDuration: const Duration(milliseconds: 300),
       curve: Curves.easeInOut,
@@ -154,9 +156,10 @@ class AppPages {
 
     GetPage(
       name: AppRoutes.addTransaction,
-      page: () => const HomePage(), // Replace with actual add transaction page
+      page: () => const HomePage(),
+      // Replace with actual add transaction page
       binding: HomeBinding(),
-      middlewares: [AuthMiddleware()],
+      middlewares: DevConstants.enableAuthMiddleware ? [AuthMiddleware()] : [],
       transition: Transition.downToUp,
       transitionDuration: const Duration(milliseconds: 300),
       curve: Curves.easeInOut,
@@ -164,9 +167,10 @@ class AppPages {
 
     GetPage(
       name: AppRoutes.categories,
-      page: () => const HomePage(), // Replace with actual categories page
+      page: () => const HomePage(),
+      // Replace with actual categories page
       binding: HomeBinding(),
-      middlewares: [AuthMiddleware()],
+      middlewares: DevConstants.enableAuthMiddleware ? [AuthMiddleware()] : [],
       transition: Transition.rightToLeft,
       transitionDuration: const Duration(milliseconds: 300),
       curve: Curves.easeInOut,
@@ -174,9 +178,10 @@ class AppPages {
 
     GetPage(
       name: AppRoutes.reports,
-      page: () => const HomePage(), // Replace with actual reports page
+      page: () => const HomePage(),
+      // Replace with actual reports page
       binding: HomeBinding(),
-      middlewares: [AuthMiddleware()],
+      middlewares: DevConstants.enableAuthMiddleware ? [AuthMiddleware()] : [],
       transition: Transition.rightToLeft,
       transitionDuration: const Duration(milliseconds: 300),
       curve: Curves.easeInOut,
@@ -184,9 +189,10 @@ class AppPages {
 
     GetPage(
       name: AppRoutes.settings,
-      page: () => const HomePage(), // Replace with actual settings page
+      page: () => const HomePage(),
+      // Replace with actual settings page
       binding: HomeBinding(),
-      middlewares: [AuthMiddleware()],
+      middlewares: DevConstants.enableAuthMiddleware ? [AuthMiddleware()] : [],
       transition: Transition.rightToLeft,
       transitionDuration: const Duration(milliseconds: 300),
       curve: Curves.easeInOut,
