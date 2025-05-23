@@ -41,6 +41,10 @@ class StorageKeys {
   static const String cachedTransactions = "cached_transactions";
 }
 
+class DevConstants {
+  static const bool enableAuthMiddleware = false; // Set to false for UI development
+}
+
 /// Timeout value constants
 class TimeoutConstants {
   TimeoutConstants._();  // Private constructor
