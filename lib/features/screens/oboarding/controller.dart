@@ -11,19 +11,13 @@ class OnboardingController extends GetxController {
   late PageController pageController;
 
   // Total number of onboarding pages
-  static const int pageCount = 4; // Increased to 4 pages
+  static const int pageCount = 3; // Increased to 4 pages
 
   // Track if user came from setup flow
   final RxBool fromSetupFlow = false.obs;
 
   // Onboarding content with updated messaging
   final List<OnboardingContent> pages = [
-    OnboardingContent(
-      title: 'Welcome to Money Track!',
-      description: 'You\'re all set up! Now let\'s show you how to make the most of your expense tracking journey.',
-      imagePath: 'assets/images/welcome-board.svg',
-      color: Colors.deepPurple,
-    ),
     OnboardingContent(
       title: 'Gain total control of your money',
       description: 'With your preferred currency and settings, become your own money manager and make every cent count.',
@@ -39,7 +33,7 @@ class OnboardingController extends GetxController {
     OnboardingContent(
       title: 'Start your journey',
       description: 'Everything is configured perfectly for you. Let\'s begin tracking your expenses!',
-      imagePath: 'assets/images/start-board.svg',
+      imagePath: 'assets/images/plan-board.svg',
       color: Colors.deepPurple,
     ),
   ];
