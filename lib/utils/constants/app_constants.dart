@@ -48,7 +48,7 @@ class DevConstants {
   DevConstants._();  // Private constructor
 
   // Authentication & Security
-  static const bool enableAuthMiddleware = false; // Set to false for UI development
+  static const bool enableAuthMiddleware = true; // Set to false for UI development
   static const bool enablePinProtection = false; // Disable PIN for development
   static const bool enableBiometrics = false; // Disable biometrics for development
 
